@@ -1,0 +1,49 @@
+{
+  "name": "xublit-injector",
+  "description": "Injector for Xublit",
+  "version": "1.0.0-rc.1",
+  "main": "src/xublit-injector.js",
+  "directories": {
+    "test": "test"
+  },
+  "homepage": "https://github.com/xublit/xublit-injector",
+  "author": {
+    "name": "Cal Milne",
+    "email": "cal@calmilne.com",
+    "web": "https://github.com/luminous-patterns"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xublit/xublit-injector.git"
+  },
+  "bugs": {
+    "url": "https://github.com/xublit/xublit-injector/issues"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/xublit/xublit-injector/blob/master/LICENSE"
+    }
+  ],
+  "dependencies": {
+    "karma-es6-shim": "^0.2.3"
+  },
+  "devDependencies": {
+    "babel-core": "^6.4.5",
+    "babel-preset-es2015": "^6.3.13",
+    "grunt": "^0.4.5",
+    "grunt-babel": "^6.0.0",
+    "grunt-contrib-jshint": "^0.12.0",
+    "grunt-contrib-watch": "^0.6.1",
+    "grunt-karma": "^0.12.1",
+    "jasmine-core": "^2.4.1",
+    "karma": "^0.13.19",
+    "karma-es6-shim": "^0.2.3",
+    "karma-jasmine": "^0.3.6",
+    "karma-phantomjs-launcher": "^0.2.3",
+    "karma-requirejs": "^0.2.3",
+    "karma-script-launcher": "^0.1.0",
+    "karma-spec-reporter": "0.0.23",
+    "load-grunt-tasks": "~0.4.0"
+  }
+}
