@@ -1,49 +1,46 @@
-const path = require('path');
-const util = require('util');
-const EventEmitter = require('events');
+import path from 'path';
+import util from 'util';
+import EventEmitter from 'events';
 
-import { Injector } from '../../build/src/xublit-injector';
+import * as __ from '../constants';
 
-const FAKE_ROOT_DIR = path.dirname('../fakeRoot');
-const FAKE_INJECTOR_MODULES_DIR = path.join(
-    'test', 'fakes', 'injectorModules'
-); 
+import Injector from '../../build/src/xublit-injector';
+import { includeModulesFrom as defaultModuleLoader } from '../../build/src/module-loader';
 
-describe('Xublit Injector', function () {
+describe('Xublit Injector', () => {
 
     var injector;
 
-    beforeEach(function () {
+    beforeEach(() => {
 
         injector = new Injector({
-            coreModuleName: '$someAppCore',
-            rootDir: FAKE_ROOT_DIR,
-            includeDirs: [FAKE_INJECTOR_MODULES_DIR],
+            rootDir: __.FAKE_ROOT_DIR,
         });
 
     });
 
-    describe('constructor', function () {
+    describe('constructor', () => {
 
-        it('should throw an error if the rootDir option is not specified', function () {
-            expect(function () {
-                injector = new Injector({
-                    coreModuleName: '$someAppCore',
-                    // rootDir: FAKE_ROOT_DIR,
-                    includeDirs: [FAKE_INJECTOR_MODULES_DIR],
-                });
+        it('should throw an error if the "rootDir" option is not specified', () => {
+            expect(() => {
+                injector = new Injector();
             }).toThrowError('Missing "rootDir" option');
         });
 
+        it('should set correct default properties when ', () => {
+            expect(injector.moduleLoader).toBe(defaultModuleLoader)
+            expect('missingDependencyHandler' in injector).toBe(true);
+            expect(injector.missingDependencyHandler).toBe(undefined);
+        });
+
     });
 
-    describe('instance', function () {
+    describe('instance', () => {
         
-        it('should be an instance of EventEmitter', function () {
+        it('should be an instance of EventEmitter', () => {
             expect(injector instanceof EventEmitter).toBe(true);
         });
 
     });
-
 
 });

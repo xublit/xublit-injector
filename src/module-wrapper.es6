@@ -1,6 +1,6 @@
 import { instanceRef } from './util';
 
-exports.ModuleWrapper = class ModuleWrapper {
+export class ModuleWrapper {
 
     constructor (xublitModule) {
 
@@ -118,7 +118,7 @@ exports.ModuleWrapper = class ModuleWrapper {
 
     }
 
-};
+}
 
 function assertDependencyCountMatch (resolvedDependencies, moduleWrapper) {
     if (resolvedDependencies.length !== moduleWrapper.numDependencies) {

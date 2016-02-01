@@ -1,14 +1,14 @@
-'use strict';
-
-const path = require('path');
-const EventEmitter = require('events');
-
 import 'babel-polyfill';
 
-import { ModuleWrapper } from './module-wrapper';
+import path from 'path';
+import EventEmitter from 'events';
+
+import * as __ from './constants';
+
+import ModuleWrapper from './module-wrapper';
 import { includeModulesFrom } from './module-loader';
 
-export class Injector extends EventEmitter {
+export default class Injector extends EventEmitter {
 
     constructor (opts) {
 
@@ -21,7 +21,7 @@ export class Injector extends EventEmitter {
         }
 
         var defaults = {
-            coreModuleName: '$app',
+            coreModuleName: __.DEFAULT_CORE_MODULE_NAME,
             moduleLoader: includeModulesFrom,
             missingDependencyHandler: undefined,
             includeDirs: [
@@ -30,13 +30,13 @@ export class Injector extends EventEmitter {
             ],
         };
 
-        Object.keys(defaults).forEach(function (key) {
+        Object.keys(defaults).forEach((key) => {
             Object.defineProperty(this, key, {
                 value: key in opts ? opts[key] : defaults[key],
                 writable: false,
                 enumerable: true,
             });
-        }, this);
+        });
 
         Object.defineProperties(this, {
 
@@ -63,7 +63,7 @@ export class Injector extends EventEmitter {
             this.moduleLoader.findAllIn(this.includeDirs)
         );
         
-        this.modules.forEach(function (module) {
+        this.modules.forEach((module) => {
 
             var dependency = new ModuleWrapper(module);
 
@@ -73,11 +73,11 @@ export class Injector extends EventEmitter {
 
             this.modulesByDependencyRef.add(dependency.instanceRef, dependency);
 
-        }, this);
+        });
 
-        this.modulesByDependencyRef.forEach(function (dependency, ref) {
+        this.modulesByDependencyRef.forEach((dependency, ref) => {
             this.parse(dependency, ref);
-        }, this);
+        });
 
         this.emit('bootstrapped');
 
@@ -106,11 +106,11 @@ export class Injector extends EventEmitter {
             return [];
         }
 
-        return dependencyRefs.map(function (dependencyRef, index) {
+        return dependencyRefs.map((dependencyRef, index) => {
 
             if ('' === dependencyRef) {
                 throw new Error(util.format(
-                    ERROR_MESSAGE_NONAME_DEPENDENCY, index
+                    __.ERROR_MESSAGE_NONAME_DEPENDENCY, index
                 ));
             }
 
@@ -128,7 +128,7 @@ export class Injector extends EventEmitter {
                 .bootstrap()
                 .injectableFor(dependencyRef);
 
-        }, this);
+        });
 
     }
 
@@ -142,7 +142,7 @@ export class Injector extends EventEmitter {
                 dependency.dependencies
             );
 
-            resolvedDependencies.forEach(function (resolvedDependency, i) {
+            resolvedDependencies.forEach((resolvedDependency, i) => {
 
                 var dependencyUnmet = undefined === resolvedDependency;
                 if (dependencyUnmet) {
@@ -156,7 +156,7 @@ export class Injector extends EventEmitter {
                     this.parse(this.dependency(resolvedRef), resolvedRef);
                 }
 
-            }, this);
+            });
             
         }
         catch (error) {

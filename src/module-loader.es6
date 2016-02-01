@@ -1,12 +1,12 @@
-const fs = require('fs');
-const path = require('path');
+import { readdirSync, statSync } from 'fs';
+import path from 'path';
 
 export function includeModulesFrom (includeDirPaths) {
 
     var potentials = {};
     var modules = [];
 
-    includeDirPaths.forEach(function (includeDirPath) {
+    includeDirPaths.forEach((includeDirPath) => {
 
         var dirname;
         var includeDirs;
@@ -29,7 +29,7 @@ export function includeModulesFrom (includeDirPaths) {
 
     });
 
-    potentials.forEach(function (module) {
+    potentials.forEach((module) => {
 
         if (!isInjectorModule(module)) {
             return;
@@ -77,13 +77,13 @@ function findXublits (dirname, opts) {
         return recursive || includeDirs.test(dirname);
     }
 
-    var filenames = fs.readdirSync(dirname);
+    var filenames = readdirSync(dirname);
 
-    filenames.forEach(function (filename) {
+    filenames.forEach((filename) => {
 
         var filepath = dirname + '/' + filename;
 
-        var isDirectory = fs.statSync(filepath).isDirectory();
+        var isDirectory = statSync(filepath).isDirectory();
         if (!isDirectory) {
 
             var match = /\.(js|json|node)$/i.test(filename);
