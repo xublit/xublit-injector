@@ -1,4 +1,4 @@
-import InjectableConstructor from './injectable-constructor';
+import InjectableClass from './injectable-class';
 import InjectableInstance from './injectable-instance';
 
 import { instanceRef } from './util';
@@ -47,17 +47,22 @@ export class ModuleWrapper {
         return this.ref.substr(0, 1);
     }
 
-    get isAbstractConstructor () {
+    get isAbstractClass () {
         return /^Abstract[A-Z]/.test(this.ref);
     }
 
-    get injectableAsInstance () {
-        return false === this.isAbstractConstructor &&
+    get isOnlyInjectableAsInstance () {
+        return true === this.isInjectableAsInstance &&
+            false === this.isInjectableAsClass;
+    }
+
+    get isInjectableAsInstance () {
+        return false === this.isAbstractClass &&
             '!' !== this.refTypeIdentifier;
     }
 
-    get injectableAsConstructor () {
-        return this.isAbstractConstructor ||
+    get isInjectableAsClass () {
+        return this.isAbstractClass ||
             /^[A-Z]/.test(this.refTypeIdentifier);
     }
 
@@ -77,11 +82,10 @@ export class ModuleWrapper {
         return true === this.instanceOnly ? this.ref : instanceRef(this.ref);
     }
 
-    setReadonlyProp (prop, value) {
+    defineEnumerable (prop, value) {
 
         Object.defineProperty(this, prop, {
             value: value,
-            writable: false,
             enumerable: true,
         });
 
@@ -112,7 +116,7 @@ export class ModuleWrapper {
 
         assertValidDependencies(resolvedDependencies, this);
 
-        this.setReadonlyProp(
+        this.defineEnumerable(
             'bootstrapReturnValue',
             bootstrap(this.bootstrapFn, resolvedDependencies)
         );
@@ -158,15 +162,15 @@ function parseBootstrapReturnValueFor (moduleWrapper) {
     var ref = moduleWrapper.ref;
     var Module = moduleWrapper.bootstrapReturnValue;
 
-    if (true === moduleWrapper.injectableAsConstructor) {
-        moduleWrapper.setReadonlyProp(
-            'injectableConstructor', new InjectableConstructor(ref, Module)
+    if (true === moduleWrapper.isInjectableAsClass) {
+        moduleWrapper.defineEnumerable(
+            'injectableClass', new InjectableClass(moduleWrapper)
         );
     }
 
-    if (true === moduleWrapper.injectableAsInstance) {
-        moduleWrapper.setReadonlyProp(
-            'injectableInstance', new InjectableInstance(ref, Module)
+    if (true === moduleWrapper.isInjectableAsInstance) {
+        moduleWrapper.defineEnumerable(
+            'injectableInstance', new InjectableInstance(moduleWrapper)
         );
     }
 

@@ -1,9 +1,13 @@
 import Injectable from './injectable';
 
-export class InjectableInstance extends Injectable {
+export default class InjectableInstance extends Injectable {
 
-    constructor (ref, Module) {
-        super(ref, Module);
+    constructor (moduleWrapper) {
+        super(moduleWrapper);
+    }
+
+    get ref () {
+        return this.moduleWrapper.instanceRef;
     }
 
 }
