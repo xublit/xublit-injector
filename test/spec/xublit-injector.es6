@@ -1,10 +1,12 @@
-import path from 'path';
-import util from 'util';
 import EventEmitter from 'events';
+
+import * as path from 'path';
+import * as util from 'util';
 
 import * as __ from '../constants';
 
 import Injector from '../../build/src/xublit-injector';
+
 import { includeModulesFrom as defaultModuleLoader } from '../../build/src/module-loader';
 
 describe('Xublit Injector', () => {
@@ -28,9 +30,17 @@ describe('Xublit Injector', () => {
         });
 
         it('should set correct default properties when ', () => {
-            expect(injector.moduleLoader).toBe(defaultModuleLoader)
+
+            expect(injector.moduleLoader).toBe(defaultModuleLoader);
+
             expect('missingDependencyHandler' in injector).toBe(true);
             expect(injector.missingDependencyHandler).toBe(undefined);
+
+            expect(injector.includeDirs).toEqual(jasmine.arrayContaining([
+                path.join(__.FAKE_ROOT_DIR, 'node_modules', 'xublit*'),
+                path.join(__.FAKE_ROOT_DIR, 'src'),
+            ]));
+
         });
 
     });

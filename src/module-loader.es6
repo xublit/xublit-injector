@@ -1,5 +1,6 @@
+import * as path from 'path';
+
 import { readdirSync, statSync } from 'fs';
-import path from 'path';
 
 export function includeModulesFrom (includeDirPaths) {
 

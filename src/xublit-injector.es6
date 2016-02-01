@@ -1,11 +1,12 @@
 import 'babel-polyfill';
 
-import path from 'path';
 import EventEmitter from 'events';
 
-import * as __ from './constants';
+import * as path from 'path';
 
 import ModuleWrapper from './module-wrapper';
+
+import * as __ from './constants';
 import { includeModulesFrom } from './module-loader';
 
 export default class Injector extends EventEmitter {
@@ -166,7 +167,5 @@ export default class Injector extends EventEmitter {
         return resolvedDependencies;
 
     }
-
-
 
 }
