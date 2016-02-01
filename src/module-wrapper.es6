@@ -1,3 +1,6 @@
+import InjectableConstructor from './injectable-constructor';
+import InjectableInstance from './injectable-instance';
+
 import { instanceRef } from './util';
 
 export class ModuleWrapper {
@@ -31,7 +34,7 @@ export class ModuleWrapper {
             },
 
             resolvedDependencies: {
-                value: [],
+                value: {},
                 writable: false,
                 enumerable: true,
             },
@@ -40,8 +43,22 @@ export class ModuleWrapper {
 
     }
 
-    get instanceOnly () {
-        return /^[!A-Z]$/.test(this.ref.substr(0, 1));
+    get refTypeIdentifier () {
+        return this.ref.substr(0, 1);
+    }
+
+    get isAbstractConstructor () {
+        return /^Abstract[A-Z]/.test(this.ref);
+    }
+
+    get injectableAsInstance () {
+        return false === this.isAbstractConstructor &&
+            '!' !== this.refTypeIdentifier;
+    }
+
+    get injectableAsConstructor () {
+        return this.isAbstractConstructor ||
+            /^[A-Z]/.test(this.refTypeIdentifier);
     }
 
     get bootstrapped () {
@@ -60,8 +77,20 @@ export class ModuleWrapper {
         return true === this.instanceOnly ? this.ref : instanceRef(this.ref);
     }
 
+    setReadonlyProp (prop, value) {
+
+        Object.defineProperty(this, prop, {
+            value: value,
+            writable: false,
+            enumerable: true,
+        });
+
+        return this;
+
+    }
+
     isBootstrapped () {
-        return true === this.bootstrapped;
+        return undefined !== this.bootstrapReturnValue;
     }
 
     injectableFor (ref) {
@@ -77,42 +106,18 @@ export class ModuleWrapper {
 
     bootstrap (resolvedDependencies) {
 
-        if (true === this.bootstrapped) {
+        if (this.isBootstrapped()) {
             return this;
         }
 
-        if (!Array.isArray(resolvedDependencies)) {
-            throw new TypeError('Resolved dependencies must be an Array');
-        }
+        assertValidDependencies(resolvedDependencies, this);
 
-        assertDependencyCountMatch(this, resolvedDependencies);
+        this.setReadonlyProp(
+            'bootstrapReturnValue',
+            bootstrap(this.bootstrapFn, resolvedDependencies)
+        );
 
-        try {
-            var Module = this.bootstrapFn(...resolvedDependencies);
-        }
-        catch (error) {
-            // Bootstrap failed while executing module's bootstrap function
-        }
-
-        Object.defineProperty(this, '_bootstrapped', {
-            value: Module,
-            writable: false,
-            enumerable: true,
-        });
-
-        if (false === this.instanceOnly) {
-            Object.defineProperty(this, 'bootstrappedClass', {
-                value: Module,
-                writable: false,
-                enumerable: true,
-            });
-        }
-
-        Object.defineProperty(this, 'bootstrappedInstance', {
-            value: new Module(),
-            writable: false,
-            enumerable: true,
-        });
+        parseBootstrapReturnValueFor(this);
 
         return this;
 
@@ -120,12 +125,49 @@ export class ModuleWrapper {
 
 }
 
-function assertDependencyCountMatch (resolvedDependencies, moduleWrapper) {
+function assertValidDependencies (resolvedDependencies, moduleWrapper) {
+
+    if (!Array.isArray(resolvedDependencies)) {
+        throw new TypeError('Resolved dependencies must be an Array');
+    }
+
     if (resolvedDependencies.length !== moduleWrapper.numDependencies) {
         throw new Error(util.format(
-            'Dependency miscount: Expected %s, got %s',
+            'resolvedDependencies mismatch: Expected %s, got %s',
             moduleWrapper.numDependencies,
             resolvedDependencies.length
         ));
     }
+
+}
+
+function bootstrap (bootstrapFn, resolvedDependencies) {
+
+    try {
+        return bootstrapFn(...resolvedDependencies);
+    }
+    catch (error) {
+        // Bootstrap failed while executing module's bootstrap function
+        throw new Error('');
+    }
+
+}
+
+function parseBootstrapReturnValueFor (moduleWrapper) {
+
+    var ref = moduleWrapper.ref;
+    var Module = moduleWrapper.bootstrapReturnValue;
+
+    if (true === moduleWrapper.injectableAsConstructor) {
+        moduleWrapper.setReadonlyProp(
+            'injectableConstructor', new InjectableConstructor(ref, Module)
+        );
+    }
+
+    if (true === moduleWrapper.injectableAsInstance) {
+        moduleWrapper.setReadonlyProp(
+            'injectableInstance', new InjectableInstance(ref, Module)
+        );
+    }
+
 }

@@ -3,10 +3,9 @@ import EventEmitter from 'events';
 import * as path from 'path';
 import * as util from 'util';
 
-import * as __ from '../constants';
-
 import Injector from '../../build/src/xublit-injector';
 
+import { FAKE_BASE_DIR } from '../constants';
 import defaultModuleLoader from '../../build/src/module-loader';
 
 describe('Xublit Injector', () => {
@@ -16,7 +15,11 @@ describe('Xublit Injector', () => {
     beforeEach(() => {
 
         injector = new Injector({
-            baseDir: __.FAKE_BASE_DIR,
+            baseDir: FAKE_BASE_DIR,
+            includeDirs: [
+                path.join(FAKE_BASE_DIR, 'fake-node_modules', 'xublit-fake-*'),
+                path.join(FAKE_BASE_DIR, 'fake-src'),
+            ],
         });
 
     });
@@ -31,6 +34,10 @@ describe('Xublit Injector', () => {
 
         it('should use correct default options', () => {
 
+            injector = new Injector({
+                baseDir: FAKE_BASE_DIR,
+            });
+
             expect(injector.moduleLoader).toBe(defaultModuleLoader);
 
             expect('missingDependencyHandler' in injector).toBe(true);
@@ -39,8 +46,8 @@ describe('Xublit Injector', () => {
             ));
 
             expect(injector.includeDirs).toEqual(jasmine.arrayContaining([
-                path.join(__.FAKE_BASE_DIR, 'node_modules', 'xublit*'),
-                path.join(__.FAKE_BASE_DIR, 'src'),
+                path.join(FAKE_BASE_DIR, 'node_modules', 'xublit*'),
+                path.join(FAKE_BASE_DIR, 'src'),
             ]));
 
             expect(injector.modulesByDependencyRef).toEqual(jasmine.any(Map));
@@ -54,23 +61,23 @@ describe('Xublit Injector', () => {
             var fakeModuleLoader = function () { };
 
             injector = new Injector({
-                baseDir: __.FAKE_BASE_DIR,
+                baseDir: FAKE_BASE_DIR,
                 coreModuleName: '$myInjector',
                 missingDependencyHandler: fakeDependencyHandler,
                 moduleLoader: fakeModuleLoader,
                 includeDirs: [
-                    path.join(__.FAKE_BASE_DIR, 'xublit_modules'),
+                    path.join(FAKE_BASE_DIR, 'xublit_modules'),
                 ],
             });
 
-            expect(injector.baseDir).toBe(__.FAKE_BASE_DIR);
+            expect(injector.baseDir).toBe(FAKE_BASE_DIR);
             expect(injector.coreModuleName).toBe('$myInjector');
             expect(injector.missingDependencyHandler).toBe(fakeDependencyHandler);
             expect(injector.moduleLoader).toBe(fakeModuleLoader);
 
             expect(injector.includeDirs.length).toBe(1);
             expect(injector.includeDirs).toEqual(jasmine.arrayContaining([
-                path.join(__.FAKE_BASE_DIR, 'xublit_modules'),
+                path.join(FAKE_BASE_DIR, 'xublit_modules'),
             ]));
 
         });
@@ -78,7 +85,7 @@ describe('Xublit Injector', () => {
         it('should ignore properties specified in "opts" where no matching key exists in "defaults"', () => {
             
             injector = new Injector({
-                baseDir: __.FAKE_BASE_DIR,
+                baseDir: FAKE_BASE_DIR,
                 foobarsCustomValue: 'quux',
             });
 
@@ -92,14 +99,14 @@ describe('Xublit Injector', () => {
             
             expect(() => {
                 injector = new Injector({
-                    baseDir: __.FAKE_BASE_DIR,
+                    baseDir: FAKE_BASE_DIR,
                     includeDirs: 'meow',
                 });
             }).toThrowError('Invalid value for property "includeDirs" - expected Array');
 
             expect(() => {
                 injector = new Injector({
-                    baseDir: __.FAKE_BASE_DIR,
+                    baseDir: FAKE_BASE_DIR,
                     includeDirs: [
                         'some/relative/file/path',
                     ],
@@ -125,11 +132,11 @@ describe('Xublit Injector', () => {
             spyOn(spies, 'moduleLoader').and.returnValue([]);
 
             var fakeIncludeDirs = [
-                path.join(__.FAKE_BASE_DIR, 'xublit_modules')
+                path.join(FAKE_BASE_DIR, 'xublit_modules')
             ];
 
             injector = new Injector({
-                baseDir: __.FAKE_BASE_DIR,
+                baseDir: FAKE_BASE_DIR,
                 moduleLoader: spies.moduleLoader,
                 includeDirs: fakeIncludeDirs,
             });
