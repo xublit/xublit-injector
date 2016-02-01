@@ -1,6 +1,4 @@
-'use strict'
-
-const instanceRef = require('./util/instance-ref');
+import { instanceRef } from './util';
 
 exports.ModuleWrapper = class ModuleWrapper {
 

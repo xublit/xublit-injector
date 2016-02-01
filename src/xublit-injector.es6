@@ -1,21 +1,12 @@
+'use strict';
+
 const path = require('path');
 const EventEmitter = require('events');
 
-const rootAppPath = path.dirname(require.main.filename);
-const DEFAULT_MODULES_PATH = path.join(DEFAULT_APP_ROOT_PATH, 'modules');
+import 'babel-polyfill';
 
 import { ModuleWrapper } from './module-wrapper';
 import { includeModulesFrom } from './module-loader';
-
-const defaults = {
-    coreModuleName: '$app',
-    moduleLoader: includeModulesFrom,
-    missingDependencyHandler: undefined,
-    includeDirs: [
-        path.join(rootAppPath, 'node_modules', 'xublit*'), 
-        path.join(rootAppPath, 'src'),
-    ],
-};
 
 export class Injector extends EventEmitter {
 
@@ -24,6 +15,20 @@ export class Injector extends EventEmitter {
         super();
 
         opts = opts || {};
+
+        if (!opts.rootDir) {
+            throw new Error('Missing "rootDir" option');
+        }
+
+        var defaults = {
+            coreModuleName: '$app',
+            moduleLoader: includeModulesFrom,
+            missingDependencyHandler: undefined,
+            includeDirs: [
+                path.join(opts.rootDir, 'node_modules', 'xublit*'), 
+                path.join(opts.rootDir, 'src'),
+            ],
+        };
 
         Object.keys(defaults).forEach(function (key) {
             Object.defineProperty(this, key, {
