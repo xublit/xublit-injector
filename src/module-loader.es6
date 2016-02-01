@@ -2,7 +2,7 @@ import * as path from 'path';
 
 import { readdirSync, statSync } from 'fs';
 
-export function includeModulesFrom (includeDirPaths) {
+export default function defaultModuleLoader (includeDirPaths) {
 
     var potentials = {};
     var modules = [];

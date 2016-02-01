@@ -3,11 +3,12 @@ import 'babel-polyfill';
 import EventEmitter from 'events';
 
 import * as path from 'path';
+import * as util from 'util';
 
 import ModuleWrapper from './module-wrapper';
 
 import * as __ from './constants';
-import { includeModulesFrom } from './module-loader';
+import defaultModuleLoader from './module-loader';
 
 export default class Injector extends EventEmitter {
 
@@ -17,26 +18,53 @@ export default class Injector extends EventEmitter {
 
         opts = opts || {};
 
-        if (!opts.rootDir) {
-            throw new Error('Missing "rootDir" option');
+        if (!opts.baseDir) {
+            throw new Error('Missing "baseDir" option');
         }
 
         var defaults = {
+            baseDir: '',
             coreModuleName: __.DEFAULT_CORE_MODULE_NAME,
-            moduleLoader: includeModulesFrom,
-            missingDependencyHandler: undefined,
             includeDirs: [
-                path.join(opts.rootDir, 'node_modules', 'xublit*'), 
-                path.join(opts.rootDir, 'src'),
+                path.join(opts.baseDir, 'node_modules', 'xublit*'), 
+                path.join(opts.baseDir, 'src'),
             ],
+            missingDependencyHandler: function () { },
+            moduleLoader: defaultModuleLoader,
         };
 
         Object.keys(defaults).forEach((key) => {
+
+            var value = key in opts ? opts[key] : defaults[key];
+            var writable = false;
+            var enumerable = true;
+
+            switch (key) {
+
+                case 'includeDirs':
+                    Injector.assertValidIncludeDirs(value);
+                    value = value.slice(0);
+                    break;
+
+                case 'moduleLoader':
+                    // no break
+
+                case 'missingDependencyHandler':
+                    if ('function' !== typeof value) {
+                        throw new TypeError(util.format(
+                            __.ERROR_MESSAGE_INVALID_FUNCTION_FOR, key
+                        ));
+                    }
+                    break;
+
+            }
+
             Object.defineProperty(this, key, {
-                value: key in opts ? opts[key] : defaults[key],
+                value: value,
                 writable: false,
                 enumerable: true,
             });
+
         });
 
         Object.defineProperties(this, {
@@ -47,7 +75,7 @@ export default class Injector extends EventEmitter {
                 enumerable: true,
             },
 
-            modules: {
+            loadedModules: {
                 value: [],
                 writable: false,
                 enumerable: true,
@@ -57,14 +85,32 @@ export default class Injector extends EventEmitter {
 
     }
 
+    static assertValidIncludeDirs (includeDirs) {
+
+        if (!Array.isArray(includeDirs)) {
+            throw new TypeError(__.ERROR_MESSAGE_INCL_DIRS_NOT_ARRAY);
+        }
+
+        includeDirs.forEach((includeDir) => {
+            if (!path.isAbsolute(includeDir)) {
+                throw new Error(util.format(
+                    __.ERROR_MESSAGE_RELATIVE_INCL_DIR, includeDir
+                ));
+            }
+        });
+
+    }
+
     bootstrap () {
 
+        var loadedModules = this.moduleLoader(this.includeDirs) || [];
+
         Array.prototype.push.apply(
-            this.modules, 
-            this.moduleLoader.findAllIn(this.includeDirs)
+            this.loadedModules, 
+            loadedModules
         );
         
-        this.modules.forEach((module) => {
+        loadedModules.forEach((module) => {
 
             var dependency = new ModuleWrapper(module);
 
@@ -137,32 +183,25 @@ export default class Injector extends EventEmitter {
 
         var resolvedDependencies;
 
-        try {
+        resolvedDependencies = this.resolveDependencies(
+            dependency.dependencies
+        );
 
-            resolvedDependencies = this.resolveDependencies(
-                dependency.dependencies
-            );
+        resolvedDependencies.forEach((resolvedDependency, i) => {
 
-            resolvedDependencies.forEach((resolvedDependency, i) => {
+            var dependencyUnmet = undefined === resolvedDependency;
+            if (dependencyUnmet) {
+                throw new Error(util.format(
+                    __.ERROR_MESSAGE_UNDEFINED_DEPENDENCY, refs[i]
+                ));
+            }
 
-                var dependencyUnmet = undefined === resolvedDependency;
-                if (dependencyUnmet) {
-                    throw new Error(util.format(
-                        ERROR_MESSAGE_UNMET_DEPENDENCY, resolvedDependency
-                    ));
-                }
+            if (!resolvedDependency.isBootstrapped) {
+                let resolvedRef = resolvedDependency.dependencies[i];
+                this.parse(this.dependency(resolvedRef), resolvedRef);
+            }
 
-                if (!resolvedDependency.isBootstrapped) {
-                    let resolvedRef = resolvedDependency.dependencies[i];
-                    this.parse(this.dependency(resolvedRef), resolvedRef);
-                }
-
-            });
-            
-        }
-        catch (error) {
-            this.handle(ERR_DEP_RESOLUTION_FAILED, error, dependency, ref);
-        }
+        });
 
         return resolvedDependencies;
 
