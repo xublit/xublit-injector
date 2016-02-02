@@ -205,6 +205,105 @@ describe('The Xublit Injector', () => {
             expect(injector.wrappedModules.length).toBe(7);
         });
 
+        describe('test modules', () => {
+
+            var $aCoreModule;
+            var AnotherModule;
+            var SomeFakeModule;
+            var someFakeModule;
+            var singletonModule;
+            var AbstractFakeModule;
+
+            beforeEach(() => {
+
+                $aCoreModule = injector.injectable('$aCoreModule');
+                AnotherModule = injector.injectable('AnotherModule');
+                SomeFakeModule = injector.injectable('SomeFakeModule');
+                someFakeModule = injector.injectable('someFakeModule');
+                singletonModule = injector.injectable('singletonModule');
+                AbstractFakeModule = injector.injectable(
+                    'AbstractFakeModule'
+                );
+
+            });
+
+            describe('someFakeModule', () => {
+
+                it('should be an instanceof SomeFakeModule', () => {
+                    expect(someFakeModule instanceof SomeFakeModule).toBe(true);
+                });
+
+                it('should be an instanceof AbstractFakeModule', () => {
+                    expect(someFakeModule instanceof AbstractFakeModule).toBe(true);
+                });
+
+                it('should have "foo" as value for property "someVar"', () => {
+                    expect(someFakeModule.someVar).toBe('foo');
+                });
+
+                it('should have "bar" as value for property "anotherVar"', () => {
+                    expect(someFakeModule.anotherVar).toBe('bar');
+                });
+
+            });
+
+            describe('singletonModule', () => {
+
+                var moduleWrapper;
+
+                beforeEach(() => {
+
+                    moduleWrapper = injector.moduleWrapperRefs
+                        .get('singletonModule');
+
+
+                });
+
+                it('should not be available as a class', () => {
+                    expect(moduleWrapper.injectableClass).toBeUndefined();
+                });
+
+            });
+
+            describe('$aCoreModule', () => {
+
+                var moduleWrapper;
+
+                beforeEach(() => {
+
+                    moduleWrapper = injector.moduleWrapperRefs
+                        .get('$aCoreModule');
+
+                });
+
+                it('should not be available as a class', () => {
+                    expect(moduleWrapper.injectableClass).toBeUndefined();
+                });
+
+                it('should have a property "AnotherModule" which is a reference to the injectable for "AnotherModule"', () => {
+                    expect($aCoreModule.AnotherModule).toBe(AnotherModule);
+                });
+
+                it('should have a property "SomeFakeModule" which is a reference to the injectable for "SomeFakeModule"', () => {
+                    expect($aCoreModule.SomeFakeModule).toBe(SomeFakeModule);
+                });
+
+                it('should have a property "someFakeModule" which is a reference to the injectable for "someFakeModule"', () => {
+                    expect($aCoreModule.someFakeModule).toBe(someFakeModule);
+                });
+
+                it('should have a property "singletonModule" which is a reference to the injectable for "singletonModule"', () => {
+                    expect($aCoreModule.singletonModule).toBe(singletonModule);
+                });
+
+                it('should have a property "injector" which is a reference to the injector', () => {
+                    expect($aCoreModule.injector).toBe(injector);
+                });
+
+            });
+
+        });
+
     });
 
 });

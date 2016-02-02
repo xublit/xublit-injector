@@ -14,8 +14,8 @@ export default class ModuleWrapper {
         }
 
         this.defineEnumerable('ref', xublitModule.ref)
-            .defineEnumerable('dependencyRefs', xublitModule.inject.slice(0))
-            .defineEnumerable('bootstrapFn', xublitModule.bootstrap);
+            .defineEnumerable('bootstrapFn', xublitModule.bootstrap)
+            .defineEnumerable('dependencyRefs', xublitModule.inject.slice(0));
 
     }
 
@@ -80,6 +80,11 @@ export default class ModuleWrapper {
         return undefined !== this.bootstrapReturnValue;
     }
 
+    provideInjector (injector) {
+        this.defineEnumerable('injector', injector);
+        return this;
+    }
+
     defineEnumerable (prop, value) {
 
         Object.defineProperty(this, prop, {
@@ -112,7 +117,7 @@ export default class ModuleWrapper {
 
         this.defineEnumerable(
             'bootstrapReturnValue',
-            bootstrap(this.ref, this.bootstrapFn, resolvedDependencies)
+            bootstrap(this, this.bootstrapFn, resolvedDependencies)
         );
 
         parseBootstrapReturnValueFor(this);
@@ -139,10 +144,17 @@ function assertValidDependencies (resolvedDependencies, moduleWrapper) {
 
 }
 
-function bootstrap (moduleRef, bootstrapFn, resolvedDependencies) {
+function bootstrap (moduleWrapper, bootstrapFn, resolvedDependencies) {
+
+    var moduleRef = moduleWrapper.moduleRef;
+    var bootstrapScope = {
+        injector: function () {
+            return moduleWrapper.injector;
+        },
+    };
 
     try {
-        return bootstrapFn(...resolvedDependencies);
+        return bootstrapFn.call(bootstrapScope, ...resolvedDependencies);
     }
     catch (error) {
         // Bootstrap failed while executing module's bootstrap function

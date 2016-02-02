@@ -123,6 +123,8 @@ export default class Injector extends EventEmitter {
 
             var d = new ModuleWrapper(module);
 
+            d.provideInjector(this);
+
             this.wrappedModules.push(d);
 
             if (true === d.isInjectableAsInstance) {
@@ -168,6 +170,30 @@ export default class Injector extends EventEmitter {
         module.bootstrap(this.resolveModuleDependencies(module));
 
         return module;
+
+    }
+
+    injectable (ref) {
+
+        var wrapperRefs = this.moduleWrapperRefs;
+
+        if (!wrapperRefs.has(ref)) {
+            throw new Error(util.format(
+                'Module for "%s" does not exist or has not been loaded yet', ref
+            ));
+        }
+
+        var module = wrapperRefs.get(ref);
+
+        if (false === module.isBootstrapped) {
+            throw new Error(util.format(
+                'Module for "%s" has not been bootstrapped yet', ref
+            ));
+        }
+
+        return module
+            .injectableFor(ref)
+            .injectable;
 
     }
 

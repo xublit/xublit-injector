@@ -1,11 +1,17 @@
 export var ref = '$aCoreModule';
-export var inject = ['SomeFakeModule', 'someFakeModule', 'singletonModule'];
-export function bootstrap (SomeFakeModule, someFakeModule, singletonModule) {
+export var inject = ['AnotherModule', 'SomeFakeModule', 'someFakeModule', 'singletonModule'];
+export function bootstrap (AnotherModule, SomeFakeModule, someFakeModule, singletonModule) {
+
+    var injector = this.injector();
 
     class ACoreModule {
 
         constructor () {
             
+        }
+
+        get AnotherModule () {
+            return AnotherModule;
         }
 
         get SomeFakeModule () {
@@ -18,6 +24,10 @@ export function bootstrap (SomeFakeModule, someFakeModule, singletonModule) {
 
         get singletonModule () {
             return singletonModule;
+        }
+
+        get injector () {
+            return injector;
         }
 
     }

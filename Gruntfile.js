@@ -87,7 +87,7 @@ module.exports = function (grunt) {'use strict';
 
     grunt.registerTask(
         'unit',
-        'Run dev server and watch for changes',
+        'Build and test',
         ['build', 'test']
     );
 
