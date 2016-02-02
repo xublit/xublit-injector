@@ -269,14 +269,14 @@ describe('The ModuleWrapper', () => {
 
     describe('injectableFor(ref)', () => {
 
-        it('should return this.bootstrappedInstance if ref === this.instanceRef', () => {
-            moduleWrapper.bootstrappedInstance = 'foo';
+        it('should return this.injectableInstance if ref === this.instanceRef', () => {
+            moduleWrapper.injectableInstance = 'foo';
             expect(moduleWrapper.injectableFor(moduleWrapper.instanceRef))
                 .toBe('foo');
         });
 
-        it('should return this.bootstrappedClass if ref === this.classRef', () => {
-            moduleWrapper.bootstrappedClass = 'foo';
+        it('should return this.injectableClass if ref === this.classRef', () => {
+            moduleWrapper.injectableClass = 'foo';
             expect(moduleWrapper.injectableFor(moduleWrapper.classRef))
                 .toBe('foo');
         });

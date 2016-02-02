@@ -95,9 +95,9 @@ export default class ModuleWrapper {
         
         switch (ref) {
             case this.instanceRef:
-                return this.bootstrappedInstance;
+                return this.injectableInstance;
             case this.classRef:
-                return this.bootstrappedClass;
+                return this.injectableClass;
         }
 
     }

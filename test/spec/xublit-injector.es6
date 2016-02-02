@@ -197,9 +197,12 @@ describe('The Xublit Injector', () => {
 
     describe('bootstrap()', () => {
 
-        it('should bootstrap the Xublit modules', () => {
+        beforeEach(() => {
             injector.bootstrap();
-            expect(injector.wrappedModules.length).toBe(10);
+        })
+
+        it('should bootstrap the correct number of Xublit modules', () => {
+            expect(injector.wrappedModules.length).toBe(7);
         });
 
     });

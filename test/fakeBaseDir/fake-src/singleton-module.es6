@@ -1,6 +1,6 @@
 export var ref = 'singletonModule';
-export var inject = [];
-export function bootstrap () {
+export var inject = ['aDeepModule'];
+export function bootstrap (aDeepModule) {
 
     class SingletonModule {
 
@@ -8,8 +8,8 @@ export function bootstrap () {
 
         }
 
-        doSomething () {
-            return 'Something...';
+        get aDeepModule () {
+            return aDeepModule;
         }
 
     }

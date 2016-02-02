@@ -161,8 +161,6 @@ export default class Injector extends EventEmitter {
 
     bootstrapModule (module) {
 
-        console.log('bootstrapping %s', module.ref);
-
         if (module.isBootstrapped) {
             return module;
         }
@@ -172,23 +170,6 @@ export default class Injector extends EventEmitter {
         return module;
 
     }
-
-    // parse (dependency, ref) {
-
-    //     if (dependency.isBootstrapped()) {
-    //         return dependency.injectableFor(ref);
-    //     }
-
-    //     var resolvedDependencies = this.resolveDependencies(
-    //         ref,
-    //         dependency.dependencyRefs
-    //     );
-
-    // }
-
-    // moduleForDependencyRef (ref) {
-    //     return this.modulesByDependencyRef.get(dependencyRef);
-    // }
 
     resolveModuleDependencies (module) {
 
@@ -217,39 +198,13 @@ export default class Injector extends EventEmitter {
                 );
             }
 
-            return this.bootstrapModule(dependency)
-                .injectableFor(dependencyRef);
+            return this
+                .bootstrapModule(dependency)
+                .injectableFor(dependencyRef)
+                .injectable;
 
         });
 
     }
-
-    // resolveDependencyRefs (refs) {
-
-    //     var resolvedDependencies;
-
-    //     resolvedDependencies = this.resolveDependencies(
-    //         dependency.dependencies
-    //     );
-
-    //     resolvedDependencies.forEach((resolvedDependency, i) => {
-
-    //         var dependencyUnmet = undefined === resolvedDependency;
-    //         if (dependencyUnmet) {
-    //             throw new Error(util.format(
-    //                 __.ERROR_MESSAGE_UNDEFINED_DEPENDENCY, refs[i]
-    //             ));
-    //         }
-
-    //         if (!resolvedDependency.isBootstrapped) {
-    //             let resolvedRef = resolvedDependency.dependencies[i];
-    //             this.parse(this.dependency(resolvedRef), resolvedRef);
-    //         }
-
-    //     });
-
-    //     return resolvedDependencies;
-
-    // }
 
 }

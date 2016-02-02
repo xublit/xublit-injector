@@ -1,16 +1,23 @@
 export var ref = '$aCoreModule';
-export var inject = ['SomeFakeModule', 'singletonModule'];
-export function bootstrap (SomeFakeModule, singletonModule) {
-
-    console.log(SomeFakeModule);
+export var inject = ['SomeFakeModule', 'someFakeModule', 'singletonModule'];
+export function bootstrap (SomeFakeModule, someFakeModule, singletonModule) {
 
     class ACoreModule {
 
         constructor () {
             
-            this.someFakeModule = new SomeFakeModule();
-            this.singletonModule = singletonModule;
+        }
 
+        get SomeFakeModule () {
+            return SomeFakeModule;
+        }
+
+        get someFakeModule () {
+            return someFakeModule;
+        }
+
+        get singletonModule () {
+            return singletonModule;
         }
 
     }

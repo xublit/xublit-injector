@@ -38,12 +38,12 @@ describe('The Xublit Injector\'s Default Module Loader', () => {
             describe('where the value for the first argument is "/some/dir"', () => {
 
                 beforeEach(() => {
-                    parsedPath = parsePath('/some/dir');
+                    parsedPath = parsePath(path.join('', 'some', 'dir'));
                 });
 
                 it('should include a property "searchDir" - the value of which should be "/some/dir"', () => {
                     expect(parsedPath).toEqual(jasmine.objectContaining({
-                        searchDir: '/some/dir',
+                        searchDir: path.join('', 'some', 'dir'),
                     }));
                 });
 
@@ -58,12 +58,12 @@ describe('The Xublit Injector\'s Default Module Loader', () => {
             describe('where the value for the first argument is "/some/dir/wildcard-*"', () => {
 
                 beforeEach(() => {
-                    parsedPath = parsePath('/some/dir/wildcard-*');
+                    parsedPath = parsePath(path.join('', 'some', 'dir', 'wildcard-*'));
                 });
 
                 it('should include a property "searchDir" - the value of which should be "/some/dir"', () => {
                     expect(parsedPath).toEqual(jasmine.objectContaining({
-                        searchDir: '/some/dir',
+                        searchDir: path.join('', 'some', 'dir'),
                     }));
                 });
 
@@ -96,9 +96,11 @@ describe('The Xublit Injector\'s Default Module Loader', () => {
         it('should follow the (odd?) pattern around wildcards', () => {
 
             modules = loadModulesIn([
-                FAKE_BASE_DIR,
+                path.join(FAKE_BASE_DIR, 'fake-src'),
                 path.join(FAKE_BASE_DIR, 'fake-node_modules', 'xublit-*'),
             ]);
+
+            console.log(modules);
 
             expect(modules.length).toBe(7);
 
