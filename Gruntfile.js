@@ -2,9 +2,12 @@
 module.exports = function (grunt) {'use strict';
 
     var path = require('path');
-
-    var SpecReporter = require('jasmine-spec-reporter');
     var Jasmine = require('jasmine');
+    var JasmineSpecReporter = require('jasmine-spec-reporter');
+
+    var jasmineSpecReporter = new JasmineSpecReporter({
+        displayStacktrace: 'summary',
+    });
 
     require('load-grunt-tasks')(grunt);
 
@@ -56,6 +59,10 @@ module.exports = function (grunt) {'use strict';
             },
         },
 
+        test: {
+
+        },
+
     });
 
 
@@ -97,12 +104,17 @@ module.exports = function (grunt) {'use strict';
 
     function runJasmineTests () {
 
+        var done = this.async();
         var jasmine = new Jasmine();
 
         jasmine.loadConfigFile([__dirname, 'jasmine.json'].join(path.sep));
 
         jasmine.configureDefaultReporter({ print: function () {} });
-        jasmine.addReporter(new SpecReporter());
+        jasmine.addReporter(jasmineSpecReporter);
+
+        jasmine.onComplete(function(passed) {
+            done(passed);
+        });
 
         jasmine.execute();
 
