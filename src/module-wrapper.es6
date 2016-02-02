@@ -1,45 +1,17 @@
+import * as util from 'util';
+
 import InjectableClass from './injectable-class';
 import InjectableInstance from './injectable-instance';
 
 import { instanceRef } from './util';
 
-export class ModuleWrapper {
+export default class ModuleWrapper {
 
     constructor (xublitModule) {
 
-        Object.defineProperty(this, 'ref', {
-            value: xublitModule.ref,
-            writable: false,
-            enumerable: true,
-        });
-
-        Object.defineProperties(this, {
-
-            ref: {
-                value: xublitModule.ref,
-                writable: false,
-                enumerable: true,
-            },
-
-            dependencyRefs: {
-                value: xublitModule.inject.slice(0),
-                writable: false,
-                enumerable: true,
-            },
-
-            bootstrapFn: {
-                value: xublitModule.bootstrap,
-                writable: false,
-                enumerable: true,
-            },
-
-            resolvedDependencies: {
-                value: {},
-                writable: false,
-                enumerable: true,
-            },
-
-        });
+        this.defineEnumerable('ref', xublitModule.ref)
+            .defineEnumerable('dependencyRefs', xublitModule.inject.slice(0))
+            .defineEnumerable('bootstrapFn', xublitModule.bootstrap);
 
     }
 
@@ -75,11 +47,33 @@ export class ModuleWrapper {
     }
 
     get classRef () {
-        return true === this.instanceOnly ? undefined : this.ref;
+
+        if (false === this.isInjectableAsClass) {
+            return undefined;
+        }
+
+        return this.ref;
+
     }
 
     get instanceRef () {
-        return true === this.instanceOnly ? this.ref : instanceRef(this.ref);
+
+        if (false === this.isInjectableAsInstance) {
+            return undefined;
+        }
+
+        if (true === this.isOnlyInjectableAsInstance) {
+            return this.ref;
+        }
+
+        if (true === this.isInjectableAsClass) {
+            return instanceRef(this.ref);
+        }
+
+    }
+
+    get isBootstrapped () {
+        return undefined !== this.bootstrapReturnValue;
     }
 
     defineEnumerable (prop, value) {
@@ -91,10 +85,6 @@ export class ModuleWrapper {
 
         return this;
 
-    }
-
-    isBootstrapped () {
-        return undefined !== this.bootstrapReturnValue;
     }
 
     injectableFor (ref) {
@@ -110,7 +100,7 @@ export class ModuleWrapper {
 
     bootstrap (resolvedDependencies) {
 
-        if (this.isBootstrapped()) {
+        if (this.isBootstrapped) {
             return this;
         }
 

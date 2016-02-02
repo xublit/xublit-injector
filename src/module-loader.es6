@@ -1,33 +1,53 @@
 import * as path from 'path';
+import * as fs from 'fs';
 
-export function defaultModuleLoader (includeDirPaths) {
+export function parsePath (includeDirPath) {
+
+    var searchDir;
+    var includeDirs;
+
+    var pathParts = includeDirPath.split(path.sep);
+    if (pathParts.slice(0).pop().indexOf('*') > -1) {
+        includeDirs = wildcardDirnameToRegExp(pathParts.pop());
+    }
+
+    searchDir = pathParts.join(path.sep);
+
+    return {
+        searchDir: searchDir,
+        includeDirs: includeDirs,
+    };
+
+}
+
+export function wildcardDirnameToRegExp (dirname) {
+    return new RegExp(
+        '^' + dirname.replace('*', '[A-Z-_.]+') + '$',
+        'i'
+    );
+}
+
+export function loadModulesIn (includeDirPaths) {
 
     var potentials = {};
     var modules = [];
 
     includeDirPaths.forEach((includeDirPath) => {
 
-        var dirname;
-        var includeDirs;
+        var parsedPath = parsePath(includeDirPath);
 
-        var pathParts = includeDirPath.split(path.sep);
+        var searchDir = parsedPath.searchDir;
+        var opts = {};
 
-        if (pathParts.slice(0).pop().substr('*') > -1) {
-            includeDirs = new RegExp(
-                '^[^\.]{1,2}' + pathParts.pop().replace('*', '[A-Z-_.]+'),
-                'i'
-            );
+        if (parsedPath.includeDirs) {
+            opts.includeDirs = parsedPath.includeDirs;
         }
 
-        dirname = pathParts.join(path.sep);
-
-        Object.assign(potentials, findXublits(dirname, {
-            includeDirs: includeDirs,
-        }));
+        Object.assign(potentials, findXublits(searchDir, opts));
 
     });
 
-    potentials.forEach((module) => {
+    Object.values(potentials).forEach((module) => {
 
         if (!isInjectorModule(module)) {
             return;
@@ -64,8 +84,6 @@ export function isInjectorModule (module) {
 }
 
 function findXublits (dirname, opts) {
-
-    var fs = require('fs');
     
     opts = opts || {};
 

@@ -6,7 +6,7 @@ import * as util from 'util';
 import Injector from '../../src/xublit-injector';
 
 import { FAKE_BASE_DIR } from '../constants';
-import { defaultModuleLoader } from '../../src/module-loader';
+import { loadModulesIn } from '../../src/module-loader';
 
 describe('The Xublit Injector', () => {
 
@@ -38,7 +38,7 @@ describe('The Xublit Injector', () => {
                 baseDir: FAKE_BASE_DIR,
             });
 
-            expect(injector.moduleLoader).toBe(defaultModuleLoader);
+            expect(injector.moduleLoader).toBe(loadModulesIn);
 
             expect('missingDependencyHandler' in injector).toBe(true);
             expect(injector.missingDependencyHandler).toEqual(jasmine.any(

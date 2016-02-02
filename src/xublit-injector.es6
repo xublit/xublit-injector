@@ -8,7 +8,7 @@ import * as util from 'util';
 import ModuleWrapper from './module-wrapper';
 
 import * as __ from './constants';
-import { defaultModuleLoader } from './module-loader';
+import { loadModulesIn } from './module-loader';
 
 export default class Injector extends EventEmitter {
 
@@ -30,7 +30,7 @@ export default class Injector extends EventEmitter {
                 path.join(opts.baseDir, 'src'),
             ],
             missingDependencyHandler: function () { },
-            moduleLoader: defaultModuleLoader,
+            moduleLoader: loadModulesIn,
         };
 
         Object.keys(defaults).forEach((key) => {
