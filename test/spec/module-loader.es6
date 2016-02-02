@@ -100,8 +100,6 @@ describe('The Xublit Injector\'s Default Module Loader', () => {
                 path.join(FAKE_BASE_DIR, 'fake-node_modules', 'xublit-*'),
             ]);
 
-            console.log(modules);
-
             expect(modules.length).toBe(7);
 
         });

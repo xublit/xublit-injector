@@ -11,6 +11,7 @@ module.exports = function (grunt) {'use strict';
 
     require('load-grunt-tasks')(grunt);
 
+
     /**
      * Grunt Task Config
      */
@@ -18,6 +19,7 @@ module.exports = function (grunt) {'use strict';
     grunt.initConfig({
 
         buildDir: 'build',
+        distDir: 'dist',
 
         clean: [
             '<%= buildDir %>',
@@ -60,7 +62,9 @@ module.exports = function (grunt) {'use strict';
         },
 
         test: {
-
+            options: {
+                configFile: 'jasmine.json',
+            },
         },
 
     });
@@ -105,10 +109,12 @@ module.exports = function (grunt) {'use strict';
 
     function runJasmineTests () {
 
+        var options = this.options();
+
         var done = this.async();
         var jasmine = new Jasmine();
 
-        jasmine.loadConfigFile([__dirname, 'jasmine.json'].join(path.sep));
+        jasmine.loadConfigFile(path.resolve(options.configFile));
 
         jasmine.configureDefaultReporter({ print: function () {} });
         jasmine.addReporter(jasmineSpecReporter);
