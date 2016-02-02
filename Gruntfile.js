@@ -1,3 +1,11 @@
+var metaBanner = '\
+/**\n\
+ * <%= pkg.description %>\n\
+ * @version v<%= pkg.version %><%= buildTag %>\n\
+ * @link <%= pkg.homepage %>\n\
+ * @license MIT License, http://www.opensource.org/licenses/MIT\n\
+ */';
+
 /* global module:false */
 module.exports = function (grunt) {'use strict';
 
@@ -17,9 +25,31 @@ module.exports = function (grunt) {'use strict';
      */
 
     grunt.initConfig({
+        
+        pkg: grunt.file.readJSON('package.json'),
+        buildTag: '-dev-' + grunt.template.today('yyyy-mm-dd'),
 
         buildDir: 'build',
         distDir: 'dist',
+
+        meta: {
+            banner: metaBanner,
+        },
+
+        usebanner: {
+            build: {
+                options: {
+                    position: 'top',
+                    banner: '<%= meta.banner %>',
+                    linebreak: true
+                },
+                files: {
+                    src: [
+                        'build/**/*.js',
+                    ],
+                },
+            },
+        },
 
         clean: [
             '<%= buildDir %>',
@@ -82,7 +112,7 @@ module.exports = function (grunt) {'use strict';
     grunt.registerTask(
         'build',
         'Perform a clean build',
-        ['clean', 'babel']
+        ['clean', 'babel', 'usebanner']
     );
 
     grunt.registerTask(
