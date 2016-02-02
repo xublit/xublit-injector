@@ -1,8 +1,6 @@
 import * as path from 'path';
 
-import { readdirSync, statSync } from 'fs';
-
-export default function defaultModuleLoader (includeDirPaths) {
+export function defaultModuleLoader (includeDirPaths) {
 
     var potentials = {};
     var modules = [];
@@ -16,7 +14,7 @@ export default function defaultModuleLoader (includeDirPaths) {
 
         if (pathParts.slice(0).pop().substr('*') > -1) {
             includeDirs = new RegExp(
-                '^[^\.]{1,2}' + pathParts.pop().replace('*', '[A-Z-_.]*'),
+                '^[^\.]{1,2}' + pathParts.pop().replace('*', '[A-Z-_.]+'),
                 'i'
             );
         }
@@ -25,7 +23,6 @@ export default function defaultModuleLoader (includeDirPaths) {
 
         Object.assign(potentials, findXublits(dirname, {
             includeDirs: includeDirs,
-            recursive: false,
         }));
 
     });
@@ -44,7 +41,7 @@ export default function defaultModuleLoader (includeDirPaths) {
 
 }
 
-function isInjectorModule (module) {
+export function isInjectorModule (module) {
     
     if (!module) {
         return false;
@@ -67,6 +64,8 @@ function isInjectorModule (module) {
 }
 
 function findXublits (dirname, opts) {
+
+    var fs = require('fs');
     
     opts = opts || {};
 
@@ -78,16 +77,16 @@ function findXublits (dirname, opts) {
         return recursive || includeDirs.test(dirname);
     }
 
-    var filenames = readdirSync(dirname);
+    var filenames = fs.readdirSync(dirname);
 
     filenames.forEach((filename) => {
 
         var filepath = dirname + '/' + filename;
 
-        var isDirectory = statSync(filepath).isDirectory();
+        var isDirectory = fs.statSync(filepath).isDirectory();
         if (!isDirectory) {
 
-            var match = /\.(js|json|node)$/i.test(filename);
+            var match = /\.(js|json|node|es6)$/i.test(filename);
             if (match) {
                 var module = tryToRequire(filepath);
                 if (module) {

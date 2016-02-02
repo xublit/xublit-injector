@@ -8,7 +8,7 @@ import * as util from 'util';
 import ModuleWrapper from './module-wrapper';
 
 import * as __ from './constants';
-import defaultModuleLoader from './module-loader';
+import { defaultModuleLoader } from './module-loader';
 
 export default class Injector extends EventEmitter {
 

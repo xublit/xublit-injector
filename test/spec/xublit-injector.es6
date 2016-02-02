@@ -3,12 +3,12 @@ import EventEmitter from 'events';
 import * as path from 'path';
 import * as util from 'util';
 
-import Injector from '../../build/src/xublit-injector';
+import Injector from '../../src/xublit-injector';
 
 import { FAKE_BASE_DIR } from '../constants';
-import defaultModuleLoader from '../../build/src/module-loader';
+import { defaultModuleLoader } from '../../src/module-loader';
 
-describe('Xublit Injector', () => {
+describe('The Xublit Injector', () => {
 
     var injector;
 
@@ -148,6 +148,8 @@ describe('Xublit Injector', () => {
             ));
 
         });
+
+
 
     });
 

@@ -3,6 +3,9 @@ module.exports = function (grunt) {'use strict';
 
     var path = require('path');
 
+    var SpecReporter = require('jasmine-spec-reporter');
+    var Jasmine = require('jasmine');
+
     require('load-grunt-tasks')(grunt);
 
     /**
@@ -29,22 +32,11 @@ module.exports = function (grunt) {'use strict';
                     expand: true,
                     src: [
                         'src/**/*.es6',
+                        'test/**/*.es6',
                     ],
                     dest: '<%= buildDir %>/',
                     ext: '.js',
                 }],
-            },
-        },
-
-        jshint: {
-            all: [
-                'src/**/*.js',
-            ],
-            options: {
-                eqnull: true,
-                eqeqeq: true,
-                multistr: true,
-                validthis: true,
             },
         },
 
@@ -59,75 +51,13 @@ module.exports = function (grunt) {'use strict';
                 ],
                 tasks: [
                     'build',
-                    'karma:unit',
+                    'test',
                 ],
             },
-        },
-
-        karma: {
-
-            options: {
-
-                autoWatch: false,
-                autoWatchatchInterval: 0,
-                basePath: '',
-                colors: true,
-                port: 8878,
-                singleRun: true,
-                logLevel: 'INFO',
-
-                files: [
-                    'test/spec/**/*.es6',
-                ],
-                preprocessors: {
-                    'src/**/*.es6': [
-                        'browserify',
-                    ],
-                    'test/spec/**/*.es6': [
-                        'browserify',
-                    ],
-                },
-                
-                browserify: {
-                    debug: true,
-                    sourceType: 'module',
-                    transform: [
-                        'babelify',
-                        'brfs',
-                    ],
-                    extensions: [
-                        '.es6',
-                    ],
-                },
-                
-                browsers: [
-                    'PhantomJS',
-                ],
-
-                frameworks: [
-                    'browserify',
-                    'source-map-support',
-                    'jasmine',
-                ],
-                
-                reporters: [
-                    'dots',
-                ],
-            },
-
-            unit: {
-                reporters: [
-                    'spec',
-                ],
-            },
-
-            debug: {
-                logLevel: 'DEBUG',
-            },
-
         },
 
     });
+
 
     /**
      * Grunt Tasks
@@ -146,7 +76,7 @@ module.exports = function (grunt) {'use strict';
     grunt.registerTask(
         'unit',
         'Run dev server and watch for changes',
-        ['build', 'karma:unit']
+        ['build', 'test']
     );
 
     grunt.registerTask(
@@ -154,5 +84,28 @@ module.exports = function (grunt) {'use strict';
         'Run dev server and watch for changes',
         ['watch:dev']
     );
+
+    grunt.registerTask(
+        'test',
+        runJasmineTests
+    );
+
+
+    /**
+     * Grunt Task Functions
+     */
+
+    function runJasmineTests () {
+
+        var jasmine = new Jasmine();
+
+        jasmine.loadConfigFile([__dirname, 'jasmine.json'].join(path.sep));
+
+        jasmine.configureDefaultReporter({ print: function () {} });
+        jasmine.addReporter(new SpecReporter());
+
+        jasmine.execute();
+
+    }
 
 };
