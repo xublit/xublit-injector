@@ -9,6 +9,10 @@ export default class ModuleWrapper {
 
     constructor (xublitModule) {
 
+        if (!xublitModule.ref) {
+            throw new Error('Invalid value for "ref" in xublitModule');
+        }
+
         this.defineEnumerable('ref', xublitModule.ref)
             .defineEnumerable('dependencyRefs', xublitModule.inject.slice(0))
             .defineEnumerable('bootstrapFn', xublitModule.bootstrap);
@@ -35,7 +39,7 @@ export default class ModuleWrapper {
 
     get isInjectableAsClass () {
         return this.isAbstractClass ||
-            /^[A-Z]/.test(this.refTypeIdentifier);
+            /^[A-Z]$/.test(this.refTypeIdentifier);
     }
 
     get bootstrapped () {
@@ -108,7 +112,7 @@ export default class ModuleWrapper {
 
         this.defineEnumerable(
             'bootstrapReturnValue',
-            bootstrap(this.bootstrapFn, resolvedDependencies)
+            bootstrap(this.ref, this.bootstrapFn, resolvedDependencies)
         );
 
         parseBootstrapReturnValueFor(this);
@@ -135,14 +139,17 @@ function assertValidDependencies (resolvedDependencies, moduleWrapper) {
 
 }
 
-function bootstrap (bootstrapFn, resolvedDependencies) {
+function bootstrap (moduleRef, bootstrapFn, resolvedDependencies) {
 
     try {
         return bootstrapFn(...resolvedDependencies);
     }
     catch (error) {
         // Bootstrap failed while executing module's bootstrap function
-        throw new Error('');
+        let originalErrorMsg = error.message;
+        throw new Error(util.format(
+            'Failed to bootstrap module %s: %s', moduleRef, originalErrorMsg
+        ));
     }
 
 }

@@ -36,8 +36,6 @@ export default class Injector extends EventEmitter {
         Object.keys(defaults).forEach((key) => {
 
             var value = key in opts ? opts[key] : defaults[key];
-            var writable = false;
-            var enumerable = true;
 
             switch (key) {
 
@@ -61,7 +59,6 @@ export default class Injector extends EventEmitter {
 
             Object.defineProperty(this, key, {
                 value: value,
-                writable: false,
                 enumerable: true,
             });
 
@@ -69,16 +66,18 @@ export default class Injector extends EventEmitter {
 
         Object.defineProperties(this, {
 
-            modulesByDependencyRef: {
+            moduleWrapperRefs: {
                 value: new Map(),
-                writable: false,
                 enumerable: true,
             },
 
             loadedModules: {
                 value: [],
-                writable: false,
                 enumerable: true,
+            },
+
+            wrappedModules: {
+                value: [],
             },
 
         });
@@ -101,7 +100,11 @@ export default class Injector extends EventEmitter {
 
     }
 
-    bootstrap () {
+    defineModuleWrapperRef (ref, moduleWrapper) {
+        this.moduleWrapperRefs.set(ref, moduleWrapper);
+    }
+
+    loadModules () {
 
         var loadedModules = this.moduleLoader(this.includeDirs) || [];
 
@@ -109,45 +112,88 @@ export default class Injector extends EventEmitter {
             this.loadedModules, 
             loadedModules
         );
-        
-        loadedModules.forEach((module) => {
 
-            var dependency = new ModuleWrapper(module);
+        return this;
 
-            if (false === dependency.instanceOnly) {
-                this.modulesByDependencyRef.add(dependency.classRef, dependency);
+    }
+
+    wrapLoadedModules () {
+
+        this.loadedModules.forEach((module) => {
+
+            var d = new ModuleWrapper(module);
+
+            this.wrappedModules.push(d);
+
+            if (true === d.isInjectableAsInstance) {
+                this.defineModuleWrapperRef(d.instanceRef, d);
             }
 
-            this.modulesByDependencyRef.add(dependency.instanceRef, dependency);
+            if (true === d.isInjectableAsClass) {
+                this.defineModuleWrapperRef(d.classRef, d);
+            }
 
         });
 
-        this.modulesByDependencyRef.forEach((dependency, ref) => {
-            this.parse(dependency, ref);
+        return this;
+
+    }
+
+    bootstrapWrappedModules () {
+
+        this.wrappedModules.forEach((module) => {
+            this.bootstrapModule(module);
         });
+
+        return this;
+
+    }
+
+    bootstrap () {
+        
+        this.loadModules()
+            .wrapLoadedModules()
+            .bootstrapWrappedModules();
 
         this.emit('bootstrapped');
 
     }
 
-    parse (dependency, ref) {
+    bootstrapModule (module) {
 
-        if (dependency.isBootstrapped()) {
-            return dependency.injectableFor(ref);
+        console.log('bootstrapping %s', module.ref);
+
+        if (module.isBootstrapped) {
+            return module;
         }
 
-        var resolvedDependencies = this.resolveDependencies(
-            ref,
-            dependency.dependencyRefs
-        );
+        module.bootstrap(this.resolveModuleDependencies(module));
+
+        return module;
 
     }
 
-    moduleForDependencyRef (ref) {
-        return this.modulesByDependencyRef.get(dependencyRef);
-    }
+    // parse (dependency, ref) {
 
-    resolveDependencies (moduleRef, dependencyRefs) {
+    //     if (dependency.isBootstrapped()) {
+    //         return dependency.injectableFor(ref);
+    //     }
+
+    //     var resolvedDependencies = this.resolveDependencies(
+    //         ref,
+    //         dependency.dependencyRefs
+    //     );
+
+    // }
+
+    // moduleForDependencyRef (ref) {
+    //     return this.modulesByDependencyRef.get(dependencyRef);
+    // }
+
+    resolveModuleDependencies (module) {
+
+        var moduleRef = module.ref;
+        var dependencyRefs = module.dependencyRefs;
 
         if (!dependencyRefs || dependencyRefs.length < 1) {
             return [];
@@ -161,9 +207,9 @@ export default class Injector extends EventEmitter {
                 ));
             }
 
-            var module = this.moduleForDependencyRef(dependencyRef);
+            var dependency = this.moduleWrapperRefs.get(dependencyRef);
 
-            if (undefined === module) {
+            if (undefined === dependency) {
                 return this.missingDependencyHandler(
                     moduleRef,
                     dependencyRef,
@@ -171,40 +217,39 @@ export default class Injector extends EventEmitter {
                 );
             }
 
-            return module
-                .bootstrap()
+            return this.bootstrapModule(dependency)
                 .injectableFor(dependencyRef);
 
         });
 
     }
 
-    resolveDependencyRefs (refs) {
+    // resolveDependencyRefs (refs) {
 
-        var resolvedDependencies;
+    //     var resolvedDependencies;
 
-        resolvedDependencies = this.resolveDependencies(
-            dependency.dependencies
-        );
+    //     resolvedDependencies = this.resolveDependencies(
+    //         dependency.dependencies
+    //     );
 
-        resolvedDependencies.forEach((resolvedDependency, i) => {
+    //     resolvedDependencies.forEach((resolvedDependency, i) => {
 
-            var dependencyUnmet = undefined === resolvedDependency;
-            if (dependencyUnmet) {
-                throw new Error(util.format(
-                    __.ERROR_MESSAGE_UNDEFINED_DEPENDENCY, refs[i]
-                ));
-            }
+    //         var dependencyUnmet = undefined === resolvedDependency;
+    //         if (dependencyUnmet) {
+    //             throw new Error(util.format(
+    //                 __.ERROR_MESSAGE_UNDEFINED_DEPENDENCY, refs[i]
+    //             ));
+    //         }
 
-            if (!resolvedDependency.isBootstrapped) {
-                let resolvedRef = resolvedDependency.dependencies[i];
-                this.parse(this.dependency(resolvedRef), resolvedRef);
-            }
+    //         if (!resolvedDependency.isBootstrapped) {
+    //             let resolvedRef = resolvedDependency.dependencies[i];
+    //             this.parse(this.dependency(resolvedRef), resolvedRef);
+    //         }
 
-        });
+    //     });
 
-        return resolvedDependencies;
+    //     return resolvedDependencies;
 
-    }
+    // }
 
 }

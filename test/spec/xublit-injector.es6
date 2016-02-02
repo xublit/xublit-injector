@@ -17,7 +17,7 @@ describe('The Xublit Injector', () => {
         injector = new Injector({
             baseDir: FAKE_BASE_DIR,
             includeDirs: [
-                path.join(FAKE_BASE_DIR, 'fake-node_modules', 'xublit-fake-*'),
+                path.join(FAKE_BASE_DIR, 'fake-node_modules', 'xublit-*'),
                 path.join(FAKE_BASE_DIR, 'fake-src'),
             ],
         });
@@ -50,7 +50,7 @@ describe('The Xublit Injector', () => {
                 path.join(FAKE_BASE_DIR, 'src'),
             ]));
 
-            expect(injector.modulesByDependencyRef).toEqual(jasmine.any(Map));
+            expect(injector.moduleWrapperRefs).toEqual(jasmine.any(Map));
             expect(injector.loadedModules).toEqual(jasmine.any(Array));
 
         });
@@ -121,7 +121,7 @@ describe('The Xublit Injector', () => {
 
     });
 
-    describe('bootstrap()', () => {
+    describe('loadModules()', () => {
 
         it('should use the custom "moduleLoader" if specified in constructor "opts"', () => {
 
@@ -141,7 +141,7 @@ describe('The Xublit Injector', () => {
                 includeDirs: fakeIncludeDirs,
             });
 
-            injector.bootstrap();
+            injector.loadModules();
 
             expect(spies.moduleLoader).toHaveBeenCalledWith(jasmine.arrayContaining(
                 fakeIncludeDirs
@@ -149,7 +149,58 @@ describe('The Xublit Injector', () => {
 
         });
 
+        it('should load the Xublit modules found in includeDirs', () => {
+            injector.loadModules();
+            expect(injector.loadedModules.length).toBe(7);
+        });
 
+    });
+
+    describe('wrapLoadedModules()', () => {
+
+        beforeEach(() => {
+            injector.loadModules().wrapLoadedModules();
+        });
+
+        it('should wrap all the modules in this.loadedModules', () => {
+            expect(injector.wrappedModules.length)
+                .toBe(injector.loadedModules.length);
+        });
+
+        var refs = [
+            '$aCoreModule',
+            'AbstractFakeModule',
+            'singletonModule',
+            'SomeFakeModule',
+            'someFakeModule',
+            'aDeepModule',
+            'AnotherModule',
+            'anotherModule',
+            'FakeModule',
+            'fakeModule',
+        ];
+
+        refs.forEach((ref) => {
+
+            var message = util.format(
+                'should set the value for "%s" on this.moduleWrapperRefs', ref
+            );
+
+            it(message, () => {
+                expect(injector.moduleWrapperRefs.has(ref)).toBe(true);
+                expect(injector.moduleWrapperRefs.get(ref)).not.toBeUndefined();
+            });
+
+        });
+
+    });
+
+    describe('bootstrap()', () => {
+
+        it('should bootstrap the Xublit modules', () => {
+            injector.bootstrap();
+            expect(injector.wrappedModules.length).toBe(10);
+        });
 
     });
 

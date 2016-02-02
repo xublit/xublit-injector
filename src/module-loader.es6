@@ -67,7 +67,7 @@ export function isInjectorModule (module) {
         return false;
     }
 
-    if (!module.name) {
+    if (!module.ref) {
         return false;
     }
 

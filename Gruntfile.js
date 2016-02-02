@@ -77,6 +77,7 @@ module.exports = function (grunt) {'use strict';
 
     grunt.registerTask(
         'build',
+        'Perform a clean build',
         ['clean', 'babel']
     );
 

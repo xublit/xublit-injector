@@ -1,4 +1,4 @@
-export var name = 'aDeepModule';
+export var ref = 'aDeepModule';
 export var inject = [];
 export function bootstrap () {
 

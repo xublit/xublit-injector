@@ -1,4 +1,4 @@
-export var name = 'AbstractFakeModule';
+export var ref = 'AbstractFakeModule';
 export var inject = [];
 export function bootstrap () {
 

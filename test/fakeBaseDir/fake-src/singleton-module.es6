@@ -1,4 +1,4 @@
-export var name = 'singletonModule';
+export var ref = 'singletonModule';
 export var inject = [];
 export function bootstrap () {
 
