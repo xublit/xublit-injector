@@ -6,9 +6,11 @@ import * as path from 'path';
 import * as util from 'util';
 
 import ModuleWrapper from './module-wrapper';
+import ModuleBootstrapScope from './module-bootstrap-scope';
 
 import * as __ from './constants';
 import { loadModulesIn } from './module-loader';
+import { missingDependencyHandler } from './missing-dependency-handler';
 
 export default class Injector extends EventEmitter {
 
@@ -29,8 +31,13 @@ export default class Injector extends EventEmitter {
                 path.join(opts.baseDir, 'node_modules', 'xublit*'), 
                 path.join(opts.baseDir, 'src'),
             ],
-            missingDependencyHandler: function () { },
+            missingDependencyHandler: missingDependencyHandler,
             moduleLoader: loadModulesIn,
+            bootstrapScopeVars: {},
+        };
+
+        var bootstrapScopeVars = {
+            injector: this,
         };
 
         Object.keys(defaults).forEach((key) => {
@@ -53,6 +60,15 @@ export default class Injector extends EventEmitter {
                             __.ERROR_MESSAGE_INVALID_FUNCTION_FOR, key
                         ));
                     }
+                    break;
+
+                case 'bootstrapScopeVars':
+                    value = Object.assign(
+                        {}, 
+                        defaults[key], 
+                        opts[key] || {},
+                        bootstrapScopeVars
+                    );
                     break;
 
             }
@@ -78,6 +94,10 @@ export default class Injector extends EventEmitter {
 
             wrappedModules: {
                 value: [],
+            },
+
+            bootstrapScope: {
+                value: new ModuleBootstrapScope(this.bootstrapScopeVars),
             },
 
         });
@@ -123,7 +143,7 @@ export default class Injector extends EventEmitter {
 
             var d = new ModuleWrapper(module);
 
-            d.provideInjector(this);
+            d.setBootstrapScope(this.bootstrapScope);
 
             this.wrappedModules.push(d);
 

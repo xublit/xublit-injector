@@ -2,7 +2,7 @@ export var ref = '$aCoreModule';
 export var inject = ['AnotherModule', 'SomeFakeModule', 'someFakeModule', 'singletonModule'];
 export function bootstrap (AnotherModule, SomeFakeModule, someFakeModule, singletonModule) {
 
-    var injector = this.injector();
+    var injector = this.injector;
 
     class ACoreModule {
 

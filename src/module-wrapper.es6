@@ -80,8 +80,8 @@ export default class ModuleWrapper {
         return undefined !== this.bootstrapReturnValue;
     }
 
-    provideInjector (injector) {
-        this.defineEnumerable('injector', injector);
+    setBootstrapScope (bootstrapScope) {
+        this.defineEnumerable('bootstrapScope', bootstrapScope);
         return this;
     }
 
@@ -147,11 +147,7 @@ function assertValidDependencies (resolvedDependencies, moduleWrapper) {
 function bootstrap (moduleWrapper, bootstrapFn, resolvedDependencies) {
 
     var moduleRef = moduleWrapper.moduleRef;
-    var bootstrapScope = {
-        injector: function () {
-            return moduleWrapper.injector;
-        },
-    };
+    var bootstrapScope = moduleWrapper.bootstrapScope;
 
     try {
         return bootstrapFn.call(bootstrapScope, ...resolvedDependencies);

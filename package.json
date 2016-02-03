@@ -1,7 +1,7 @@
 {
   "name": "xublit-injector",
   "description": "Injector for Xublit",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0-rc.2",
   "main": "dist/xublit-injector.js",
   "directories": {
     "test": "test"
