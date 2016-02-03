@@ -26,9 +26,7 @@
       "url": "https://github.com/xublit/xublit-injector/blob/master/LICENSE"
     }
   ],
-  "dependencies": {
-    "require-all": "^2.0.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "babel-core": "~6.4.5",
     "babel-polyfill": "~6.3.14",
@@ -44,7 +42,6 @@
     "jasmine-core": "~2.4.1",
     "jasmine-spec-reporter": "^2.4.0",
     "load-grunt-tasks": "~0.4.0",
-    "phantomjs": "~2.1.3",
     "q": "^1.4.1",
     "shelljs": "^0.5.3"
   }
