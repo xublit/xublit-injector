@@ -1,0 +1,1 @@
+{"version":3,"sources":["../src/util.es6"],"names":[],"mappings":";;;;;QAAgB;AAAT,SAAS,WAAT,CAAsB,GAAtB,EAA2B;AAC9B,WAAO,IAAI,MAAJ,CAAW,CAAX,EAAa,CAAb,EAAgB,WAAhB,KAAgC,IAAI,MAAJ,CAAW,CAAX,CAAhC,CADuB;CAA3B","file":"util.js","sourcesContent":["export function instanceRef (str) {\n    return str.substr(0,1).toLowerCase() + str.substr(1);\n}"]}

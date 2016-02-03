@@ -9,8 +9,11 @@ var metaBanner = '\
 /* global module:false */
 module.exports = function (grunt) {'use strict';
 
+    var Q = require('q');
     var path = require('path');
+    var shjs = require('shelljs');
     var Jasmine = require('jasmine');
+    var faithfulExec = require('faithful-exec');
     var JasmineSpecReporter = require('jasmine-spec-reporter');
 
     var jasmineSpecReporter = new JasmineSpecReporter({
@@ -37,23 +40,35 @@ module.exports = function (grunt) {'use strict';
         },
 
         usebanner: {
+            options: {
+                position: 'top',
+                banner: '<%= meta.banner %>',
+                linebreak: true
+            },
             build: {
-                options: {
-                    position: 'top',
-                    banner: '<%= meta.banner %>',
-                    linebreak: true
-                },
                 files: {
                     src: [
                         'build/**/*.js',
                     ],
                 },
             },
+            dist: {
+                files: {
+                    src: [
+                        'dist/**/*.js',
+                    ],
+                },
+            },
         },
 
-        clean: [
-            '<%= buildDir %>',
-        ],
+        clean: {
+            build: [
+                '<%= buildDir %>',
+            ],
+            dist: [
+                '<%= distDir %>',
+            ],
+        },
 
         babel: {
             options: {
@@ -70,6 +85,17 @@ module.exports = function (grunt) {'use strict';
                         'test/**/*.es6',
                     ],
                     dest: '<%= buildDir %>/',
+                    ext: '.js',
+                }],
+            },
+            dist: {
+                files: [{
+                    expand: true,
+                    flatten: true,
+                    src: [
+                        'src/**/*.es6',
+                    ],
+                    dest: '<%= distDir %>/',
                     ext: '.js',
                 }],
             },
@@ -112,7 +138,13 @@ module.exports = function (grunt) {'use strict';
     grunt.registerTask(
         'build',
         'Perform a clean build',
-        ['clean', 'babel', 'usebanner']
+        ['clean:build', 'babel:build', 'usebanner:build']
+    );
+
+    grunt.registerTask(
+        'dist',
+        'Perform a build ready for distribution',
+        ['clean:dist', 'babel:dist', 'usebanner:dist']
     );
 
     grunt.registerTask(
@@ -130,6 +162,22 @@ module.exports = function (grunt) {'use strict';
     grunt.registerTask(
         'test',
         runJasmineTests
+    );
+
+    grunt.registerTask(
+        'release',
+        'Tag and perform a release',
+        ['prepare-release', 'dist', 'perform-release']
+    );
+
+    grunt.registerTask(
+        'prepare-release',
+        prepareRelease
+    );
+
+    grunt.registerTask(
+        'perform-release',
+        performRelease
     );
 
 
@@ -154,6 +202,139 @@ module.exports = function (grunt) {'use strict';
         });
 
         jasmine.execute();
+
+    }
+
+    function prepareRelease () {
+
+        var done = this.async();
+        var version = grunt.config('pkg.version');
+
+        function searchForExistingTag () {
+            return exec('git tag -l \"' + version + '\"');
+        }
+
+        function checkStdoutAndSetBuildTag (gitTagListCmd) {
+
+            if ('' !== gitTagListCmd.stdout.trim()) {
+                throw new Error('Tag \'' + version + '\' already exists');
+            }
+
+            grunt.config('buildTag', '');
+
+        }
+
+        ensureCleanMaster()
+            .then(searchForExistingTag)
+            .then(checkStdoutAndSetBuildTag)
+            .then(function () {
+                done();
+            })
+            .catch(handleAsyncError.bind(undefined, done))
+            .done();
+
+    }
+
+    function performRelease () {
+
+        grunt.task.requires(['prepare-release', 'dist']);
+
+        var done = this.async();
+        var version = grunt.config('pkg.version');
+        var releaseDir = grunt.config('distDir');
+
+        function stageReleaseDir () {
+            return system('git add \"' + releaseDir + '\"');
+        }
+
+        function commitStagedFiles () {
+            return system('git commit -m \"release ' + version + '\"');
+        }
+
+        function createTag () {
+            return system('git tag \"' + version + '\"');
+        }
+
+        stageReleaseDir()
+            .then(commitStagedFiles)
+            .then(createTag)
+            .then(function () {
+                done();
+            })
+            .catch(handleAsyncError.bind(undefined, done))
+            .done();
+
+    }
+
+
+    /**
+     * Helper functions
+     */
+
+    function exec (cmd) {
+
+        var deferred = Q.defer();
+
+        faithfulExec(cmd)
+            .then(function (result) {
+                deferred.resolve(result);
+            }, function (result) {
+                deferred.reject(result);
+            });
+
+        return deferred.promise;
+
+    }
+
+    function handleAsyncError (done, error) {
+
+        done = done || function () { };
+
+        grunt.log.write(error + '\n');
+        done(false);
+
+    }
+
+    function system (cmd) {
+
+        function handleStdout (result) {
+            grunt.log.write(result.stderr + result.stdout);
+        }
+
+        function handleStderr (result) {
+            grunt.log.write(result.stderr + '\n');
+            throw new Error('Failed to run \'' + cmd + '\'');
+        }
+
+        grunt.log.write('% ' + cmd + '\n');
+
+        return exec(cmd)
+            .then(handleStdout)
+            .catch(handleStderr);
+
+    }
+
+    function ensureCleanMaster () {
+
+        function assertMasterAndSetStatusPorcelain (result) {
+
+            if ('refs/heads/master' !== result.stdout.trim()) {
+                throw new Error('Not on master branch, aborting');
+            }
+            
+            return exec('git status --porcelain');
+
+        }
+
+        function assertCleanWorkingCopy (result) {
+            if ('' !== result.stdout.trim()) {
+                throw new Error('Working copy is dirty, aborting');
+            }
+        }
+
+        return exec('git symbolic-ref HEAD')
+            .then(assertMasterAndSetStatusPorcelain)
+            .then(assertCleanWorkingCopy);
 
     }
 
