@@ -1,6 +1,6 @@
 /**
  * Injector for Xublit
- * @version v1.0.0-rc.1
+ * @version v1.0.0-rc.2
  * @link https://github.com/xublit/xublit-injector
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -30,11 +30,17 @@ var _moduleWrapper = require('./module-wrapper');
 
 var _moduleWrapper2 = _interopRequireDefault(_moduleWrapper);
 
+var _moduleBootstrapScope = require('./module-bootstrap-scope');
+
+var _moduleBootstrapScope2 = _interopRequireDefault(_moduleBootstrapScope);
+
 var _constants = require('./constants');
 
 var __ = _interopRequireWildcard(_constants);
 
 var _moduleLoader = require('./module-loader');
+
+var _missingDependencyHandler = require('./missing-dependency-handler');
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -64,8 +70,13 @@ var Injector = function (_EventEmitter) {
             baseDir: '',
             coreModuleName: __.DEFAULT_CORE_MODULE_NAME,
             includeDirs: [path.join(opts.baseDir, 'node_modules', 'xublit*'), path.join(opts.baseDir, 'src')],
-            missingDependencyHandler: function missingDependencyHandler() {},
-            moduleLoader: _moduleLoader.loadModulesIn
+            missingDependencyHandler: _missingDependencyHandler.missingDependencyHandler,
+            moduleLoader: _moduleLoader.loadModulesIn,
+            bootstrapScopeVars: {}
+        };
+
+        var bootstrapScopeVars = {
+            injector: _this
         };
 
         Object.keys(defaults).forEach(function (key) {
@@ -86,6 +97,10 @@ var Injector = function (_EventEmitter) {
                     if ('function' !== typeof value) {
                         throw new TypeError(util.format(__.ERROR_MESSAGE_INVALID_FUNCTION_FOR, key));
                     }
+                    break;
+
+                case 'bootstrapScopeVars':
+                    value = Object.assign({}, defaults[key], opts[key] || {}, bootstrapScopeVars);
                     break;
 
             }
@@ -110,6 +125,10 @@ var Injector = function (_EventEmitter) {
 
             wrappedModules: {
                 value: []
+            },
+
+            bootstrapScope: {
+                value: new _moduleBootstrapScope2.default(_this.bootstrapScopeVars)
             }
 
         });
@@ -141,7 +160,7 @@ var Injector = function (_EventEmitter) {
 
                 var d = new _moduleWrapper2.default(module);
 
-                d.provideInjector(_this2);
+                d.setBootstrapScope(_this2.bootstrapScope);
 
                 _this2.wrappedModules.push(d);
 

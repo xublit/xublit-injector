@@ -1,6 +1,6 @@
 /**
  * Injector for Xublit
- * @version v1.0.0-rc.1
+ * @version v1.0.0-rc.2
  * @link https://github.com/xublit/xublit-injector
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -46,9 +46,9 @@ var ModuleWrapper = function () {
     }
 
     _createClass(ModuleWrapper, [{
-        key: 'provideInjector',
-        value: function provideInjector(injector) {
-            this.defineEnumerable('injector', injector);
+        key: 'setBootstrapScope',
+        value: function setBootstrapScope(bootstrapScope) {
+            this.defineEnumerable('bootstrapScope', bootstrapScope);
             return this;
         }
     }, {
@@ -177,11 +177,7 @@ function assertValidDependencies(resolvedDependencies, moduleWrapper) {
 function _bootstrap(moduleWrapper, bootstrapFn, resolvedDependencies) {
 
     var moduleRef = moduleWrapper.moduleRef;
-    var bootstrapScope = {
-        injector: function injector() {
-            return moduleWrapper.injector;
-        }
-    };
+    var bootstrapScope = moduleWrapper.bootstrapScope;
 
     try {
         return bootstrapFn.call.apply(bootstrapFn, [bootstrapScope].concat(_toConsumableArray(resolvedDependencies)));
