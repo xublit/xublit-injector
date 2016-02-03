@@ -1,6 +1,6 @@
 /**
  * Injector for Xublit
- * @version v1.0.0-rc.1-dev-2016-02-03
+ * @version v1.0.0-rc.1
  * @link https://github.com/xublit/xublit-injector
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
