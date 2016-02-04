@@ -182,10 +182,19 @@ export default class Injector extends EventEmitter {
 
         this.loadedModules.forEach((module) => {
 
+            var defaultScopeVars = this.bootstrapScopeVars;
+            var bootstrapScopeVars = Object.create(defaultScopeVars);
+
+            if ('function' === typeof defaultScopeVars.$options) {
+                bootstrapScopeVars.$options = defaultScopeVars.$options(
+                    module.ref
+                );
+            }
+
             var d = Injector.wrapModule(
                 module,
                 module.ref,
-                this.bootstrapScope
+                new ModuleBootstrapScope(bootstrapScopeVars)
             );
 
             this.wrappedModules.push(d);
