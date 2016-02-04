@@ -87,6 +87,11 @@ export default class Injector extends EventEmitter {
                 enumerable: true,
             },
 
+            moduleWrapperRefOverrides: {
+                value: new Map(),
+                enumerable: true,
+            },
+
             loadedModules: {
                 value: [],
                 enumerable: true,
@@ -120,6 +125,12 @@ export default class Injector extends EventEmitter {
 
     }
 
+    static wrapModule (module, ref, bootstrapScope) {
+        var moduleWrapper = new ModuleWrapper(module, ref);
+        moduleWrapper.setBootstrapScope(bootstrapScope);
+        return moduleWrapper;
+    }
+
     defineModuleWrapperRef (ref, moduleWrapper) {
         this.moduleWrapperRefs.set(ref, moduleWrapper);
     }
@@ -137,13 +148,45 @@ export default class Injector extends EventEmitter {
 
     }
 
+    override (ref, moduleWrapper) {
+
+        if ('string' !== typeof ref) {
+            throw new TypeError(util.format(
+                'Expecting string as 1st argument, got %s', typeof ref
+            ));
+        }
+
+        if (!(moduleWrapper instanceof ModuleWrapper)) {
+
+            let varType = moduleWrapper.constructor &&
+                moduleWrapper.constructor.name ||
+                typeof moduleWrapper;
+
+            throw new TypeError(util.format(
+                'Expecting a ModuleWrapper as 2nd argument, got %s', varType
+            ));
+
+        }
+
+        this.moduleWrapperRefOverrides.set(ref, moduleWrapper);
+
+        if (!moduleWrapper.isBootstrapped) {
+            moduleWrapper.bootstrap
+        }
+
+        return this;
+
+    }
+
     wrapLoadedModules () {
 
         this.loadedModules.forEach((module) => {
 
-            var d = new ModuleWrapper(module);
-
-            d.setBootstrapScope(this.bootstrapScope);
+            var d = Injector.wrapModule(
+                module,
+                module.ref,
+                this.bootstrapScope
+            );
 
             this.wrappedModules.push(d);
 
@@ -171,39 +214,72 @@ export default class Injector extends EventEmitter {
 
     }
 
-    bootstrap () {
-        
-        this.loadModules()
-            .wrapLoadedModules()
-            .bootstrapWrappedModules();
-
-        this.emit('bootstrapped');
-
+    get modulesLoaded () {
+        return this.loadedModules.length > 0;
     }
 
-    bootstrapModule (module) {
+    get allModulesWrapped () {
+        return this.loadedModules.length === this.wrappedModules.length;
+    }
 
-        if (module.isBootstrapped) {
-            return module;
+    bootstrap () {
+
+        if (!this.modulesLoaded) {
+            this.loadModules();
         }
 
-        module.bootstrap(this.resolveModuleDependencies(module));
-
-        return module;
+        if (!this.allModulesWrapped) {
+            this.wrapLoadedModules();
+        }
+        
+        this.bootstrapWrappedModules()
+            .emit('bootstrapped');
 
     }
 
-    injectable (ref) {
+    bootstrapModule (moduleWrapper) {
 
-        var wrapperRefs = this.moduleWrapperRefs;
+        if (moduleWrapper.isBootstrapped) {
+            return moduleWrapper;
+        }
 
-        if (!wrapperRefs.has(ref)) {
+        return moduleWrapper.bootstrap(
+            resolveModuleDependencies(moduleWrapper, this)
+        );
+
+    }
+
+    hasModule (ref) {
+        return this.moduleWrapperRefs.has(ref);
+    }
+
+    getModule (ref) {
+
+        if (this.hasOverrideForModule(ref)) {
+            return this.getOverrideForModule(ref);
+        }
+
+        if (!this.hasModule(ref)) {
             throw new Error(util.format(
                 'Module for "%s" does not exist or has not been loaded yet', ref
             ));
         }
 
-        var module = wrapperRefs.get(ref);
+        return this.moduleWrapperRefs.get(ref);
+
+    }
+
+    hasOverrideForModule (ref) {
+        return this.moduleWrapperRefOverrides.has(ref);
+    }
+
+    getOverrideForModule (ref) {
+        return this.moduleWrapperRefOverrides.get(ref);
+    }
+
+    injectable (ref) {
+
+        var module = this.getModule(ref);
 
         if (false === module.isBootstrapped) {
             throw new Error(util.format(
@@ -217,40 +293,40 @@ export default class Injector extends EventEmitter {
 
     }
 
-    resolveModuleDependencies (module) {
+}
 
-        var moduleRef = module.ref;
-        var dependencyRefs = module.dependencyRefs;
+function resolveModuleDependencies (moduleWrapper, injector) {
 
-        if (!dependencyRefs || dependencyRefs.length < 1) {
-            return [];
+    var moduleRef = moduleWrapper.ref;
+    var dependencyRefs = moduleWrapper.dependencyRefs;
+
+    if (!dependencyRefs || dependencyRefs.length < 1) {
+        return [];
+    }
+
+    return dependencyRefs.map((dependencyRef, index) => {
+
+        if ('' === dependencyRef) {
+            throw new Error(util.format(
+                __.ERROR_MESSAGE_NONAME_DEPENDENCY, index
+            ));
         }
 
-        return dependencyRefs.map((dependencyRef, index) => {
+        var dependency = injector.getModule(dependencyRef);
 
-            if ('' === dependencyRef) {
-                throw new Error(util.format(
-                    __.ERROR_MESSAGE_NONAME_DEPENDENCY, index
-                ));
-            }
+        if (undefined === dependency) {
+            return injector.missingDependencyHandler(
+                moduleRef,
+                dependencyRef,
+                index
+            );
+        }
 
-            var dependency = this.moduleWrapperRefs.get(dependencyRef);
+        return injector
+            .bootstrapModule(dependency)
+            .injectableFor(dependencyRef)
+            .injectable;
 
-            if (undefined === dependency) {
-                return this.missingDependencyHandler(
-                    moduleRef,
-                    dependencyRef,
-                    index
-                );
-            }
-
-            return this
-                .bootstrapModule(dependency)
-                .injectableFor(dependencyRef)
-                .injectable;
-
-        });
-
-    }
+    });
 
 }

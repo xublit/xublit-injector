@@ -7,13 +7,13 @@ import { instanceRef } from './util';
 
 export default class ModuleWrapper {
 
-    constructor (xublitModule) {
+    constructor (xublitModule, ref) {
 
-        if (!xublitModule.ref) {
-            throw new Error('Invalid value for "ref" in xublitModule');
+        if (!ref) {
+            throw new Error('Invalid value for 2nd argument');
         }
 
-        this.defineEnumerable('ref', xublitModule.ref)
+        this.defineEnumerable('ref', ref)
             .defineEnumerable('bootstrapFn', xublitModule.bootstrap)
             .defineEnumerable('dependencyRefs', xublitModule.inject.slice(0));
 

@@ -40,11 +40,11 @@ describe('The ModuleWrapper', () => {
             fakeModuleBootstrapReturnValue
         );
 
-        moduleWrapper = new ModuleWrapper(fakeModule);
+        moduleWrapper = new ModuleWrapper(fakeModule, fakeModule.ref);
 
     });
 
-    describe('constructor(xublitModule)', () => {
+    describe('constructor(xublitModule, ref)', () => {
 
         it('should set this.ref to the value for the modules export var "ref"', () => {
             expect(moduleWrapper.ref).toBe('FakeModule');
@@ -89,7 +89,7 @@ describe('The ModuleWrapper', () => {
                 ref: 'AbstractFakeModule',
                 inject: [],
                 bootstrap: function () { },
-            });
+            }, 'AbstractFakeModule');
 
             expect(moduleWrapper.isAbstractClass).toBe(true);
 
@@ -109,7 +109,7 @@ describe('The ModuleWrapper', () => {
                 ref: 'AbstractFakeModule',
                 inject: [],
                 bootstrap: function () { },
-            });
+            }, 'AbstractFakeModule');
 
             expect(moduleWrapper.isInjectableAsInstance).toBe(false);
 
@@ -121,7 +121,7 @@ describe('The ModuleWrapper', () => {
                 ref: '!singletonOnlyFakeModule',
                 inject: [],
                 bootstrap: function () { },
-            });
+            }, '!singletonOnlyFakeModule');
 
             expect(moduleWrapper.isInjectableAsInstance).toBe(false);
 
@@ -137,7 +137,7 @@ describe('The ModuleWrapper', () => {
                 ref: 'AbstractFakeModule',
                 inject: [],
                 bootstrap: function () { },
-            });
+            }, 'AbstractFakeModule');
 
             expect(moduleWrapper.isInjectableAsClass).toBe(true);
 
@@ -153,7 +153,7 @@ describe('The ModuleWrapper', () => {
                 ref: 'singletonFakeModule',
                 inject: [],
                 bootstrap: function () { },
-            });
+            }, 'singletonFakeModule');
 
             expect(moduleWrapper.isInjectableAsClass).toBe(false);
 
@@ -180,7 +180,7 @@ describe('The ModuleWrapper', () => {
                 ref: 'singletonFakeModule',
                 inject: [],
                 bootstrap: function () { },
-            });
+            }, 'singletonFakeModule');
             expect(moduleWrapper.classRef).toBeUndefined();
         });
 
@@ -189,7 +189,7 @@ describe('The ModuleWrapper', () => {
                 ref: '$singletonFakeModule',
                 inject: [],
                 bootstrap: function () { },
-            });
+            }, 'singletonFakeModule');
             expect(moduleWrapper.classRef).toBeUndefined();
         });
 
@@ -206,7 +206,7 @@ describe('The ModuleWrapper', () => {
                 ref: '!FakeModule',
                 inject: [],
                 bootstrap: function () { },
-            });
+            }, '!FakeModule');
             expect(moduleWrapper.instanceRef).toBeUndefined();
         });
 
@@ -215,7 +215,7 @@ describe('The ModuleWrapper', () => {
                 ref: 'AbstractFakeModule',
                 inject: [],
                 bootstrap: function () { },
-            });
+            }, 'AbstractFakeModule');
             expect(moduleWrapper.instanceRef).toBeUndefined();
         });
 
@@ -239,7 +239,7 @@ describe('The ModuleWrapper', () => {
                         }
                     };
                 },
-            });
+            }, 'FakeModule');
 
             moduleWrapper.bootstrap([]);
 
