@@ -82,6 +82,11 @@ export default class Injector extends EventEmitter {
 
         Object.defineProperties(this, {
 
+            injectables: {
+                value: new Map(),
+                enumerable: true,
+            },
+
             moduleWrapperRefs: {
                 value: new Map(),
                 enumerable: true,
@@ -99,10 +104,6 @@ export default class Injector extends EventEmitter {
 
             wrappedModules: {
                 value: [],
-            },
-
-            bootstrapScope: {
-                value: new ModuleBootstrapScope(this.bootstrapScopeVars),
             },
 
         });
@@ -133,6 +134,10 @@ export default class Injector extends EventEmitter {
 
     defineModuleWrapperRef (ref, moduleWrapper) {
         this.moduleWrapperRefs.set(ref, moduleWrapper);
+    }
+
+    defineInjectable (ref, injectable) {
+        this.injectables.set(ref, injectable);
     }
 
     loadModules () {
@@ -181,35 +186,50 @@ export default class Injector extends EventEmitter {
     wrapLoadedModules () {
 
         this.loadedModules.forEach((module) => {
-
-            var defaultScopeVars = this.bootstrapScopeVars;
-            var bootstrapScopeVars = Object.create(defaultScopeVars);
-
-            if ('function' === typeof defaultScopeVars.$options) {
-                bootstrapScopeVars.$options = defaultScopeVars.$options(
-                    module.ref
-                );
-            }
-
-            var d = Injector.wrapModule(
-                module,
-                module.ref,
-                new ModuleBootstrapScope(bootstrapScopeVars)
-            );
-
-            this.wrappedModules.push(d);
-
-            if (true === d.isInjectableAsInstance) {
-                this.defineModuleWrapperRef(d.instanceRef, d);
-            }
-
-            if (true === d.isInjectableAsClass) {
-                this.defineModuleWrapperRef(d.classRef, d);
-            }
-
+            this.wrapLoadedModule(module);
         });
 
         return this;
+
+    }
+
+    provide (ref, dependencyRefs, bootstrapFn, bootstrapScopeVars) {
+
+        var bootstrapFnScope = new ModuleBootstrapScope(bootstrapScopeVars);
+
+        var module = {
+            inject: dependencyRefs,
+            bootstrap: bootstrapFn,
+        };
+
+        var d = new ModuleWrapper(module, ref);
+
+        d.setBootstrapScope(bootstrapFnScope);
+
+        this.wrappedModules.push(d);
+
+        if (true === d.isInjectableAsInstance) {
+            this.defineModuleWrapperRef(d.instanceRef, d);
+        }
+
+        if (true === d.isInjectableAsClass) {
+            this.defineModuleWrapperRef(d.classRef, d);
+        }
+
+        return this;
+
+    }
+
+    wrapLoadedModule (module) {
+
+        var defaultScopeVars = this.bootstrapScopeVars;
+        
+        return this.provide(
+            module.ref, 
+            module.inject, 
+            module.bootstrap, 
+            Object.create(defaultScopeVars)
+        );
 
     }
 
@@ -252,14 +272,42 @@ export default class Injector extends EventEmitter {
             return moduleWrapper;
         }
 
-        return moduleWrapper.bootstrap(
+        moduleWrapper.bootstrap(
             resolveModuleDependencies(moduleWrapper, this)
         );
+
+        if (true === moduleWrapper.isInjectableAsInstance) {
+
+            let ref = moduleWrapper.instanceRef;
+            let injectable = moduleWrapper
+                .injectableFor(ref)
+                .injectable;
+
+            this.defineInjectable(ref, injectable);
+
+        }
+
+        if (true === moduleWrapper.isInjectableAsClass) {
+            
+            let ref = moduleWrapper.classRef;
+            let injectable = moduleWrapper
+                .injectableFor(ref)
+                .injectable;
+
+            this.defineInjectable(ref, injectable);
+
+        }
+
+        return moduleWrapper;
 
     }
 
     hasModule (ref) {
         return this.moduleWrapperRefs.has(ref);
+    }
+
+    getInjectable (ref) {
+        return this.injectables.get(ref);
     }
 
     getModule (ref) {
@@ -288,7 +336,17 @@ export default class Injector extends EventEmitter {
 
     injectable (ref) {
 
+        if (undefined !== this.getInjectable(ref)) {
+            return this.getInjectable(ref);
+        }
+
         var module = this.getModule(ref);
+
+        if (undefined === module) {
+            throw new Error(util.format(
+                'Couldn\'t find injectable or module for ref "%s"', ref
+            ));
+        }
 
         if (false === module.isBootstrapped) {
             throw new Error(util.format(
@@ -296,9 +354,7 @@ export default class Injector extends EventEmitter {
             ));
         }
 
-        return module
-            .injectableFor(ref)
-            .injectable;
+        return undefined;
 
     }
 
@@ -321,9 +377,13 @@ function resolveModuleDependencies (moduleWrapper, injector) {
             ));
         }
 
-        var dependency = injector.getModule(dependencyRef);
+        var injectable = injector.getInjectable(dependencyRef);
+        if (undefined !== injectable) {
+            return injectable;
+        }
 
-        if (undefined === dependency) {
+        var moduleWrapper = injector.getModule(dependencyRef);
+        if (undefined === moduleWrapper) {
             return injector.missingDependencyHandler(
                 moduleRef,
                 dependencyRef,
@@ -331,10 +391,9 @@ function resolveModuleDependencies (moduleWrapper, injector) {
             );
         }
 
-        return injector
-            .bootstrapModule(dependency)
-            .injectableFor(dependencyRef)
-            .injectable;
+        injector.bootstrapModule(moduleWrapper);
+
+        return injector.injectable(dependencyRef);
 
     });
 
