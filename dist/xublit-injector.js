@@ -1,10 +1,12 @@
 /**
  * Injector for Xublit
- * @version v1.0.0-rc.2
+ * @version v1.0.0-rc.3
  * @link https://github.com/xublit/xublit-injector
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
 'use strict';
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -113,7 +115,17 @@ var Injector = function (_EventEmitter) {
 
         Object.defineProperties(_this, {
 
+            injectables: {
+                value: new Map(),
+                enumerable: true
+            },
+
             moduleWrapperRefs: {
+                value: new Map(),
+                enumerable: true
+            },
+
+            moduleWrapperRefOverrides: {
                 value: new Map(),
                 enumerable: true
             },
@@ -125,10 +137,6 @@ var Injector = function (_EventEmitter) {
 
             wrappedModules: {
                 value: []
-            },
-
-            bootstrapScope: {
-                value: new _moduleBootstrapScope2.default(_this.bootstrapScopeVars)
             }
 
         });
@@ -142,6 +150,11 @@ var Injector = function (_EventEmitter) {
             this.moduleWrapperRefs.set(ref, moduleWrapper);
         }
     }, {
+        key: 'defineInjectable',
+        value: function defineInjectable(ref, injectable) {
+            this.injectables.set(ref, injectable);
+        }
+    }, {
         key: 'loadModules',
         value: function loadModules() {
 
@@ -152,28 +165,73 @@ var Injector = function (_EventEmitter) {
             return this;
         }
     }, {
+        key: 'override',
+        value: function override(ref, moduleWrapper) {
+
+            if ('string' !== typeof ref) {
+                throw new TypeError(util.format('Expecting string as 1st argument, got %s', typeof ref === 'undefined' ? 'undefined' : _typeof(ref)));
+            }
+
+            if (!(moduleWrapper instanceof _moduleWrapper2.default)) {
+
+                var varType = moduleWrapper.constructor && moduleWrapper.constructor.name || (typeof moduleWrapper === 'undefined' ? 'undefined' : _typeof(moduleWrapper));
+
+                throw new TypeError(util.format('Expecting a ModuleWrapper as 2nd argument, got %s', varType));
+            }
+
+            this.moduleWrapperRefOverrides.set(ref, moduleWrapper);
+
+            if (!moduleWrapper.isBootstrapped) {
+                moduleWrapper.bootstrap;
+            }
+
+            return this;
+        }
+    }, {
         key: 'wrapLoadedModules',
         value: function wrapLoadedModules() {
             var _this2 = this;
 
             this.loadedModules.forEach(function (module) {
-
-                var d = new _moduleWrapper2.default(module);
-
-                d.setBootstrapScope(_this2.bootstrapScope);
-
-                _this2.wrappedModules.push(d);
-
-                if (true === d.isInjectableAsInstance) {
-                    _this2.defineModuleWrapperRef(d.instanceRef, d);
-                }
-
-                if (true === d.isInjectableAsClass) {
-                    _this2.defineModuleWrapperRef(d.classRef, d);
-                }
+                _this2.wrapLoadedModule(module);
             });
 
             return this;
+        }
+    }, {
+        key: 'provide',
+        value: function provide(ref, dependencyRefs, bootstrapFn, bootstrapScopeVars) {
+
+            var bootstrapFnScope = new _moduleBootstrapScope2.default(bootstrapScopeVars);
+
+            var module = {
+                inject: dependencyRefs,
+                bootstrap: bootstrapFn
+            };
+
+            var d = new _moduleWrapper2.default(module, ref);
+
+            d.setBootstrapScope(bootstrapFnScope);
+
+            this.wrappedModules.push(d);
+
+            if (true === d.isInjectableAsInstance) {
+                this.defineModuleWrapperRef(d.instanceRef, d);
+            }
+
+            if (true === d.isInjectableAsClass) {
+                this.defineModuleWrapperRef(d.classRef, d);
+            }
+
+            return this;
+        }
+    }, {
+        key: 'wrapLoadedModule',
+        value: function wrapLoadedModule(module) {
+
+            var defaultScopeVars = this.bootstrapScopeVars;
+
+            return this.provide(module.ref, module.inject, module.bootstrap, Object.create(defaultScopeVars));
         }
     }, {
         key: 'bootstrapWrappedModules',
@@ -190,66 +248,107 @@ var Injector = function (_EventEmitter) {
         key: 'bootstrap',
         value: function bootstrap() {
 
-            this.loadModules().wrapLoadedModules().bootstrapWrappedModules();
+            if (!this.modulesLoaded) {
+                this.loadModules();
+            }
 
-            this.emit('bootstrapped');
+            if (!this.allModulesWrapped) {
+                this.wrapLoadedModules();
+            }
+
+            this.bootstrapWrappedModules().emit('bootstrapped');
         }
     }, {
         key: 'bootstrapModule',
-        value: function bootstrapModule(module) {
+        value: function bootstrapModule(moduleWrapper) {
 
-            if (module.isBootstrapped) {
-                return module;
+            if (moduleWrapper.isBootstrapped) {
+                return moduleWrapper;
             }
 
-            module.bootstrap(this.resolveModuleDependencies(module));
+            moduleWrapper.bootstrap(resolveModuleDependencies(moduleWrapper, this));
 
-            return module;
+            if (true === moduleWrapper.isInjectableAsInstance) {
+
+                var ref = moduleWrapper.instanceRef;
+                var injectable = moduleWrapper.injectableFor(ref).injectable;
+
+                this.defineInjectable(ref, injectable);
+            }
+
+            if (true === moduleWrapper.isInjectableAsClass) {
+
+                var ref = moduleWrapper.classRef;
+                var injectable = moduleWrapper.injectableFor(ref).injectable;
+
+                this.defineInjectable(ref, injectable);
+            }
+
+            return moduleWrapper;
+        }
+    }, {
+        key: 'hasModule',
+        value: function hasModule(ref) {
+            return this.moduleWrapperRefs.has(ref);
+        }
+    }, {
+        key: 'getInjectable',
+        value: function getInjectable(ref) {
+            return this.injectables.get(ref);
+        }
+    }, {
+        key: 'getModule',
+        value: function getModule(ref) {
+
+            if (this.hasOverrideForModule(ref)) {
+                return this.getOverrideForModule(ref);
+            }
+
+            if (!this.hasModule(ref)) {
+                throw new Error(util.format('Module for "%s" does not exist or has not been loaded yet', ref));
+            }
+
+            return this.moduleWrapperRefs.get(ref);
+        }
+    }, {
+        key: 'hasOverrideForModule',
+        value: function hasOverrideForModule(ref) {
+            return this.moduleWrapperRefOverrides.has(ref);
+        }
+    }, {
+        key: 'getOverrideForModule',
+        value: function getOverrideForModule(ref) {
+            return this.moduleWrapperRefOverrides.get(ref);
         }
     }, {
         key: 'injectable',
         value: function injectable(ref) {
 
-            var wrapperRefs = this.moduleWrapperRefs;
-
-            if (!wrapperRefs.has(ref)) {
-                throw new Error(util.format('Module for "%s" does not exist or has not been loaded yet', ref));
+            if (undefined !== this.getInjectable(ref)) {
+                return this.getInjectable(ref);
             }
 
-            var module = wrapperRefs.get(ref);
+            var module = this.getModule(ref);
+
+            if (undefined === module) {
+                throw new Error(util.format('Couldn\'t find injectable or module for ref "%s"', ref));
+            }
 
             if (false === module.isBootstrapped) {
                 throw new Error(util.format('Module for "%s" has not been bootstrapped yet', ref));
             }
 
-            return module.injectableFor(ref).injectable;
+            return undefined;
         }
     }, {
-        key: 'resolveModuleDependencies',
-        value: function resolveModuleDependencies(module) {
-            var _this4 = this;
-
-            var moduleRef = module.ref;
-            var dependencyRefs = module.dependencyRefs;
-
-            if (!dependencyRefs || dependencyRefs.length < 1) {
-                return [];
-            }
-
-            return dependencyRefs.map(function (dependencyRef, index) {
-
-                if ('' === dependencyRef) {
-                    throw new Error(util.format(__.ERROR_MESSAGE_NONAME_DEPENDENCY, index));
-                }
-
-                var dependency = _this4.moduleWrapperRefs.get(dependencyRef);
-
-                if (undefined === dependency) {
-                    return _this4.missingDependencyHandler(moduleRef, dependencyRef, index);
-                }
-
-                return _this4.bootstrapModule(dependency).injectableFor(dependencyRef).injectable;
-            });
+        key: 'modulesLoaded',
+        get: function get() {
+            return this.loadedModules.length > 0;
+        }
+    }, {
+        key: 'allModulesWrapped',
+        get: function get() {
+            return this.loadedModules.length === this.wrappedModules.length;
         }
     }], [{
         key: 'assertValidIncludeDirs',
@@ -265,10 +364,48 @@ var Injector = function (_EventEmitter) {
                 }
             });
         }
+    }, {
+        key: 'wrapModule',
+        value: function wrapModule(module, ref, bootstrapScope) {
+            var moduleWrapper = new _moduleWrapper2.default(module, ref);
+            moduleWrapper.setBootstrapScope(bootstrapScope);
+            return moduleWrapper;
+        }
     }]);
 
     return Injector;
 }(_events2.default);
 
 exports.default = Injector;
+
+function resolveModuleDependencies(moduleWrapper, injector) {
+
+    var moduleRef = moduleWrapper.ref;
+    var dependencyRefs = moduleWrapper.dependencyRefs;
+
+    if (!dependencyRefs || dependencyRefs.length < 1) {
+        return [];
+    }
+
+    return dependencyRefs.map(function (dependencyRef, index) {
+
+        if ('' === dependencyRef) {
+            throw new Error(util.format(__.ERROR_MESSAGE_NONAME_DEPENDENCY, index));
+        }
+
+        var injectable = injector.getInjectable(dependencyRef);
+        if (undefined !== injectable) {
+            return injectable;
+        }
+
+        var moduleWrapper = injector.getModule(dependencyRef);
+        if (undefined === moduleWrapper) {
+            return injector.missingDependencyHandler(moduleRef, dependencyRef, index);
+        }
+
+        injector.bootstrapModule(moduleWrapper);
+
+        return injector.injectable(dependencyRef);
+    });
+}
 //# sourceMappingURL=xublit-injector.js.map

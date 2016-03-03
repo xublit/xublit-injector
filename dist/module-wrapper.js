@@ -1,6 +1,6 @@
 /**
  * Injector for Xublit
- * @version v1.0.0-rc.2
+ * @version v1.0.0-rc.3
  * @link https://github.com/xublit/xublit-injector
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -35,14 +35,14 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var ModuleWrapper = function () {
-    function ModuleWrapper(xublitModule) {
+    function ModuleWrapper(xublitModule, ref) {
         _classCallCheck(this, ModuleWrapper);
 
-        if (!xublitModule.ref) {
-            throw new Error('Invalid value for "ref" in xublitModule');
+        if (!ref) {
+            throw new Error('Invalid value for 2nd argument');
         }
 
-        this.defineEnumerable('ref', xublitModule.ref).defineEnumerable('bootstrapFn', xublitModule.bootstrap).defineEnumerable('dependencyRefs', xublitModule.inject.slice(0));
+        this.defineEnumerable('ref', ref).defineEnumerable('bootstrapFn', xublitModule.bootstrap).defineEnumerable('dependencyRefs', xublitModule.inject.slice(0));
     }
 
     _createClass(ModuleWrapper, [{
