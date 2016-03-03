@@ -296,10 +296,6 @@ describe('The Xublit Injector', () => {
                     expect($aCoreModule.singletonModule).toBe(singletonModule);
                 });
 
-                it('should have a property "injector" which is a reference to the injector', () => {
-                    expect($aCoreModule.injector).toBe(injector);
-                });
-
             });
 
         });
